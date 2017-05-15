@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 
 from TwitterAPI import *
-from datetime import *
 from pymongo import MongoClient
+from genderize import Genderize
 
 import sys
 import json
@@ -23,44 +23,41 @@ twitter = TwitterAPI(consumer_key, consumer_secret,auth_type='oAuth2')
 
 
 ##DataBase 
-
 client = MongoClient()
 db = client.baseTweetsTCC
 
-tweets = db.find()
+tweets = db.tweets.find()
+
+users_count = 0
 
 for document in tweets:
 	print('Buscando...\n')
 	print('Isso Pode Demorar Um Pouco..\n')
-	while tag_cont < len(tags):
+	try:
 		r = twitter.request('users/show', {'user_id':document['id_user'] , 'screen_name':document['name']})
 		for item in r.get_iterator():
-			user = 'ID: %d, Usuario: %s, location: %s, Horario: %s, Perfil_criado: %s \n'%(item['id'],item['user']['screen_name'],item['text'],dh.now(),item['created_at'])
-			print(user)
-			#try:
-			#	db.tweets.insert_one(
-			#		{
-			#			'_id':item['id'],
-			#			'id_user':item['user']['id'],
-			#			'name':item['user']['screen_name'],
-			#			'text':item['text'],
-			#			'hourGet':dh.now(),
-			#			'created_at':item['created_at'],
-			#			'location':item['user']['location'],
-			#			'retweets_count':item['retweet_count']
-			#		}
-			#	)
-			#except Exception as inst:
-			#	print(type(inst))
+			#gender = Genderize().get(['nome'])
 
-		result_cont += 1
+			db.usersTwitter.insert_one(
+				{
+					'_id':item['id'],
+					'id_user':item['user']['id'],
+					'name':item['user']['screen_name'],
+					#'gender': gender,
+					#'age': 'idade',
+					'location':item['location'],
+					'friends_number':item['friends_count'],
+					'created_at':item['created_at']
+				}
+			)
+
+			users_count += 1
+
+	except Exception as inst:
+			print(type(inst))
 			
-	print('Resultados = %d \n'%(result_cont))
-
-	#if result_cont > 0:
-	#	print('aguarde...')
-	#	time.sleep(60)
-
+	print('Numero de Usuarios = %d \n'%(users_count))
+	
 	print('Coleta Relalizada com Sucesso! \n')
 
 

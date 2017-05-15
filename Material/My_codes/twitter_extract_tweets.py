@@ -30,14 +30,14 @@ db = client.baseTweetsTCC
 result_max = 1000000
 result_cont = 0
 dh = datetime.now()
-tags = ['hiv','aids','viagra','tinder','menopausa','carnaval','dst','sifilis','usecamisinha','hpv','tuberculose','camisinha']
+tags = ['hiv','aids','viagra','tinder','menopausa','carnaval','dst','sifilis','usecamisinha','hpv','camisinha']
 
 while result_cont < result_max:
 	print('Buscando...\n')
 	print('Isso Pode Demorar Um Pouco..\n')
 	tag_cont = 0
 	while tag_cont < len(tags):
-		r = twitter.request('search/tweets', {'q': tags[tag_cont], 'lang':'pt-br','locale':'br', 'count':'10000', 'since':'2017-04-02', 'until':'2017-05-02'})
+		r = twitter.request('search/tweets', {'q': tags[tag_cont], 'lang':'pt-br','locale':'br', 'count':'10000', 'since':'2017-04-02', 'until':'2017-05-13'})
 		for item in r.get_iterator():
 			#tweet = 'ID: %d, Usuario: %s, texto: %s, Horario: %s, Criado: %s \n'%(item['id'],item['user']['screen_name'],item['text'],dh.now(),item['created_at'])
 			#print(tweet)
@@ -54,20 +54,15 @@ while result_cont < result_max:
 						'retweets_count':item['retweet_count']
 					}
 				)
-				   result_cont += 1
+				result_cont += 1
 			except Exception as inst:
 				print(type(inst))
+		
+		print('Tag %d capturada'%(tag_cont))
 
-			
-			
 		tag_cont+=1
-
+	
 	print('Resultados = %d \n'%(result_cont))
-
-	#if result_cont > 0:
-	#	print('aguarde...')
-	#	time.sleep(60)
-
 	print('Coleta Relalizada com Sucesso! \n')
 
 
