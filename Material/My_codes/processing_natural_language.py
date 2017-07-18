@@ -3,12 +3,15 @@ from textblob import TextBlob
 from pymongo import MongoClient
 import sys
 import time
+from datetime import datetime
 
-def grava(db,campos1,campo2):
+def grava(db,campos1,campo2,campo3,campo4):
 	db.insert_one(
 				{
 					'_id':campos1,
-					'text':campo2
+					'id_user':campo2,
+					'text':campo3,
+					'date': campo4
 				}
 			)
 
@@ -37,7 +40,7 @@ def removeStopwords(db,base):
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
-			#grava(db,document['_id'],frase)
+			grava(db,document['_id'],document['id_user'],frase,document['created_at'])
 			dados.append(filtrado)
 		except Exception as inst:
 			print(type(inst))
@@ -51,7 +54,9 @@ def steaming(db,base):
 
 	stem_apply = list()
 
-	i = 1
+	stop_base = getAll(db['tweetsProcessing1'])
+
+	i = 0
 	
 	for words in base:
 		try:
@@ -62,7 +67,7 @@ def steaming(db,base):
 				list_stem.append(filtrado)
 				frase += filtrado + " "
 			stem_apply.append(list_stem)
-			#grava(db,i,frase)
+			#grava(db,(i+1),stop_base[i]['id_user'],frase)
 			i += 1
 
 		except Exception as inst:
@@ -75,6 +80,7 @@ def steaming(db,base):
 def synonyms(db,base):
 	
 	dados = list()
+
 
 	for words in base:
 		#try:
@@ -106,16 +112,13 @@ if __name__ == '__main__':
 	col3 = AcessaBd('baseTweetsTCC','tweetsProcessing2')
 	#col4 = AcessaBd('baseTweetsTCC','tweetsProcessing3')
 
-	#tweets = getAll(col1)
+	tweets = getAll(col1)
 	#tweets_stop = getAll(col2)
 	#tweets_stem = getAll(col3)
 	
-	tweets = getLimit(col2,500)
+	#tweets = getLimit(col2,500)
 
-	for t in tweets:
-		print(t)
-
-	#sem_stop = removeStopwords(col2,tweets)
+	sem_stop = removeStopwords(col2,tweets)
 
 	#stem_apply = steaming(col3,sem_stop)
 

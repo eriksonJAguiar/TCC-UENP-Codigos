@@ -4,12 +4,18 @@ from pymongo import MongoClient
 
 
 
-##DataBase s
+##DataBase
 client = MongoClient()
 db = client.baseTweetsTCC
 
 users = db.usersTwitter.find()
 
-for user in users:
+#X é um array transformado com o numpy
+
+#kmeans = KMeans(n_clusters=2, random_state=0).fit(X)
+
+#for user in users:
+
+
 
 	

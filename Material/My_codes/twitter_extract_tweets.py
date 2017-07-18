@@ -10,6 +10,9 @@ import json
 import os.path
 import time
 
+#timeout
+timeout = 40
+timeout_start = time.time()
 
 #Credencias de acesso App Twitter
 consumer_key = "NBL0CtVrn2ajbpaGEWC1GBY2c"
@@ -27,17 +30,19 @@ twitter = TwitterAPI(consumer_key, consumer_secret,auth_type='oAuth2')
 client = MongoClient()
 db = client.baseTweetsTCC
 
-result_max = 10000
+result_max = 1100
 result_cont = 0
 dh = datetime.now()
-tags = ['hiv','aids','viagra','tinder','menopausa','carnaval','dst','sifilis','usecamisinha','hpv','camisinha']
+tags = ['hiv','aids','viagra','tinder','menopausa','dst','ist','sifilis','usecamisinha','hpv','camisinha']
+
+param = sys.argv[1:]
 
 while result_cont < result_max:
-	print('Buscando...\n')
-	print('Isso Pode Demorar Um Pouco..\n')
+	#print('Buscando...\n')
+	#print('Isso Pode Demorar Um Pouco..\n')
 	tag_cont = 0
 	while tag_cont < len(tags):
-		r = twitter.request('search/tweets', {'q': tags[tag_cont], 'lang':'pt-br','locale':'br', 'count':'10000', 'since':'2017-04-02', 'until':'2017-06-10'})
+		r = twitter.request('search/tweets', {'q': tags[tag_cont], 'lang':'pt-br','locale':'br', 'count':'10000', 'since':'2017-04-02', 'until':param[0]})
 		for item in r.get_iterator():
 			#tweet = 'ID: %d, Usuario: %s, texto: %s, Horario: %s, Criado: %s \n'%(item['id'],item['user']['screen_name'],item['text'],dh.now(),item['created_at'])
 			#print(tweet)
@@ -57,14 +62,16 @@ while result_cont < result_max:
 			
 				result_cont += 1
 			except Exception as inst:
-				print(type(inst))
+				#print(type(inst))
 		
 		tag_cont += 1
-		print("%d tweets capturados"%result_cont)
-				
-print('Resultados = %d \n'%(result_cont))
-print('Coleta Relalizada com Sucesso! \n')
+		#print("%d tweets capturados"%result_cont)
 
+	if time.time() >= timeout_start + timeout:
+		break
+				
+#print('Resultados = %d \n'%(result_cont))
+#print('Coleta Relalizada com Sucesso! \n')
 
  
 

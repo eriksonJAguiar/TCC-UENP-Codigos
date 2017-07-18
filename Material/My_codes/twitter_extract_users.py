@@ -3,12 +3,14 @@
 
 from TwitterAPI import *
 from pymongo import MongoClient
-from genderize import Genderize
+#from genderize import Genderize
 
 import sys
 import json
 import os.path
 import time
+import requests
+
 
 
 #Credencias de acesso App Twitter
@@ -31,23 +33,32 @@ tweets = db.tweets.find()
 
 users_count = 0
 
-print('Buscando...\n')
-print('Isso Pode Demorar Um Pouco..\n')
+#print('Buscando...\n')
+#print('Isso Pode Demorar Um Pouco..\n')
+it = 1
 
 for document in tweets:
 	try:
 		r = twitter.request('users/show', {'user_id':document['id_user'] , 'screen_name':document['name']})
 		for item in r.get_iterator():
 			
-			name = item['name'].split(' ')
-			gender = Genderize().get([name[0]])
+			#name = item['name'].split(' ')
+			#g = 'NaN'
+			#g = detect.get_gender(u"%s"%(name[0]))
+			#try:
+			#gender = requests.get("https://api.namsor.com/onomastics/api/json/gender/"+name[0]+"/"+name[1])
+			#gender = Genderize().get([name[0]])
+			#except Exception as inst:
+			#	print(type(inst))
+
+			#if g is None: g = 'NaN'
 
 			db.usersTwitter.insert_one(
 				{
 					'_id':item['id'],
 					'twitter_name':item['screen_name'],
 					'name':item['name'],
-					'gender': gender[0]['gender'],
+					#'gender': gender['gender'],
 					'location':item['location'],
 					'friends_number':item['friends_count'],
 					'followers_number':item['followers_count'],
@@ -63,10 +74,14 @@ for document in tweets:
 
 			users_count += 1
 
+
+			print('Numero de Usuarios = %d \n'%(users_count))
+			#if (users_count) >= (50*it):
+			time.sleep(60)
+			
 	except Exception as inst:
 			print(type(inst))
-			
-print('Numero de Usuarios = %d \n'%(users_count))
+			#continue
 	
 print('Coleta Relalizada com Sucesso! \n')
 
