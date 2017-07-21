@@ -41,48 +41,38 @@ for document in tweets:
 	try:
 		r = twitter.request('users/show', {'user_id':document['id_user'] , 'screen_name':document['name']})
 		for item in r.get_iterator():
-			
-			#name = item['name'].split(' ')
-			#g = 'NaN'
-			#g = detect.get_gender(u"%s"%(name[0]))
-			#try:
-			#gender = requests.get("https://api.namsor.com/onomastics/api/json/gender/"+name[0]+"/"+name[1])
-			#gender = Genderize().get([name[0]])
-			#except Exception as inst:
-			#	print(type(inst))
-
-			#if g is None: g = 'NaN'
 
 			db.usersTwitter.insert_one(
 				{
 					'_id':item['id'],
 					'twitter_name':item['screen_name'],
 					'name':item['name'],
-					#'gender': gender['gender'],
+					'gender': 'NaN',
+					#'age': 'NaN',
 					'location':item['location'],
-					'friends_number':item['friends_count'],
-					'followers_number':item['followers_count'],
-					'listed_number': item['listed_count'],
-					'statuses_count':item['statuses_count'],
+					'friends_number':str(item['friends_count']),
+					'followers_number':str(item['followers_count']),
+					'listed_number': str(item['listed_count']),
+					'statuses_count':str(item['statuses_count']),
 					'language':item['lang'],
-					'profile_background_color':item['profile_background_color'],
-					'profile_background_image_url':item['profile_background_image_url'],
-					'profile_image_url': item['profile_image_url'],
-					'created_at':item['created_at']
+					'profile_background_color':str(item['profile_background_color']),
+					#'profile_background_image_url':item['profile_background_image_url'],
+					#'profile_image_url': item['profile_image_url'],
+					'created_at':str(item['created_at']),
+					'sentiment_mean':'NaN'
 				}
 			)
 
 			users_count += 1
 
 
-			print('Numero de Usuarios = %d \n'%(users_count))
-			#if (users_count) >= (50*it):
-			time.sleep(60)
+			#print('Numero de Usuarios = %d \n'%(users_count))
 			
 	except Exception as inst:
-			print(type(inst))
-			#continue
+			#print(type(inst))
+			pass
 	
+print('Numeros de usuarios coletados = %d'%(users_count))
 print('Coleta Relalizada com Sucesso! \n')
 
 

@@ -36,6 +36,7 @@ dh = datetime.now()
 tags = ['hiv','aids','viagra','tinder','menopausa','dst','ist','sifilis','usecamisinha','hpv','camisinha']
 
 param = sys.argv[1:]
+print(param[0])
 
 while result_cont < result_max:
 	#print('Buscando...\n')
@@ -63,6 +64,7 @@ while result_cont < result_max:
 				result_cont += 1
 			except Exception as inst:
 				#print(type(inst))
+				pass
 		
 		tag_cont += 1
 		#print("%d tweets capturados"%result_cont)
