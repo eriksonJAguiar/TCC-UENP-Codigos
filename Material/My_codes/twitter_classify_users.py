@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
+from sklearn import svm
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
@@ -69,11 +70,7 @@ if __name__ == '__main__':
 	
 	u = np.array(users_df_cp)
 	
-	#target = np.array([x for x in users_df['_id']])
-
-	km = KMeans(n_clusters=4)
-
-	k = km.fit(u)
+	target = np.array([x for x in users_df['_id']])
 
 	users_df_cp['target'] = k.labels_
 
@@ -85,5 +82,19 @@ if __name__ == '__main__':
 	#print(records)
 
 	db.kmeans.insert(records)
+
+	target = np.array([x for x in users_df['target']])
+
+	train,test,target_train,target_test = train_test_split(u,target,test_size=0.3, random_state=42)
+
+	nv = GaussianNB()
+	nv.fit(train,target_train)
+	prediction = nv.predict(test)
+
+	ac = accuracy_score(target_test, prediction)
+
+	#print(ac)
+	#print(p)
+
 
 	

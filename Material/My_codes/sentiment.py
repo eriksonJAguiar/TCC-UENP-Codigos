@@ -49,15 +49,24 @@ for user in users:
 
         for tweet in tweets:
             
-            val.append({ "language": "pt","id": tweet['_id'],"text": tweet['text'] })
-            
-            i += 1
-            count += 1
+            #val.append({ "language": "pt","id": tweet['_id'],"text": tweet['text'] })
+            #Eu+te+amo%2C+mas+odeio+o+clima+pol%C3%ADtico+atual.
 
-            if i > 900:  
-                try:
-                    body = {
-                        "documents": val
+            
+
+            r = requests.post('http://sentistrength.wlv.ac.uk/results.php?text=%s&submit=Detect+Sentiment+in+Portuguese'%(tweet['text']))
+            print(r)
+            break
+            time.sleep(60)
+
+
+            #i += 1
+            #count += 1
+
+            #if i > 900:  
+            #    try:
+                    #body = {
+                    #    "documents": val
                         #[
                         #    {
                         #      "language": "pt",
@@ -65,9 +74,9 @@ for user in users:
                         #      "text": tweet['text']
                         #    } 
                         #]    
-                    }
-                    r=requests.post('https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment',data=json.dumps(body),headers=headers)
-                    text_json = json.loads(r.text)
+                    #}
+                    #r=requests.post('https://westus.api.cognitive.microsoft.com/text/analytics/v2.0/sentiment',data=json.dumps(body),headers=headers)
+                    #text_json = json.loads(r.text)
                     #score = text_json['documents'][0]['score']
                     #id = text_json['documents'][0]['id']
 
@@ -76,17 +85,17 @@ for user in users:
                     #insertSentiment(db,i+1,id,score,tweet['date'])
 
                         
-                    for text in text_json['documents']:
-                        id = text['id']
-                        score = text['score']
-                        insertSentiment(db,id,score)
+                    #for text in text_json['documents']:
+                    #    id = text['id']
+                    #    score = text['score']
+                    #    insertSentiment(db,id,score)
 
                     
-                    i = 0
+                #    i = 0
 
-                except Exception as inst:
+                #except Exception as inst:
                     #print("Ocorreu um erro no processamento")
-                    print("[Errno {0}] {1}".format(e.errno, e.strerror))
+                #    print("[Errno {0}] {1}".format(e.errno, e.strerror))
                     #print(type(inst))
 
 print("Processamento Concluido com sucesso")

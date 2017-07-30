@@ -1,9 +1,12 @@
 import nltk
 from textblob import TextBlob
 from pymongo import MongoClient
+from nltk.twitter import Twitter
 import sys
 import time
 from datetime import datetime
+import csv
+import re
 
 def grava(db,campos1,campo2,campo3,campo4):
 	db.insert_one(
@@ -32,75 +35,55 @@ def getAll(collection):
 	
 	return collection.find()
 
+def getLimit(coll,n):
+	return coll.find().sort('text',1).limit(n)
+
+
 def removeStopwords(db,base):
-	dados = list()
+	#dados = list()
 	for document in base:
+		expr = re.sub(r"http\S+", "", document['text'])
+		expr = re.sub(r"@\S+","",expr)
 		try:
-			filtrado = [w for w in nltk.regexp_tokenize(document['text'].lower(),"[\w'@#]+") if not w in nltk.corpus.stopwords.words('portuguese')]
+			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S'#]+") if not w in nltk.corpus.stopwords.words('portuguese')]
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
 			grava(db,document['_id'],document['id_user'],frase,document['created_at'])
-			dados.append(filtrado)
+			#dados.append(filtrado)
+			#print(frase)
 		except Exception as inst:
 			print(type(inst))
-
-
-	return dados
 
 def steaming(db,base):
 
 	stem_pt = nltk.stem.SnowballStemmer('portuguese')
-
-	stem_apply = list()
-
-	stop_base = getAll(db['tweetsProcessing1'])
-
-	i = 0
 	
 	for words in base:
 		try:
-			list_stem = list()
 			frase = ""
-			for t in words: 
+			for t in words['text']: 
 				filtrado = stem_pt.stem(t.lower())
-				list_stem.append(filtrado)
 				frase += filtrado + " "
-			stem_apply.append(list_stem)
-			#grava(db,(i+1),stop_base[i]['id_user'],frase)
-			i += 1
-
+			grava(db,words['_id'],words['id_user'],frase,words['date'])
 		except Exception as inst:
 			print(type(inst))
 
-	return stem_apply
-
+def pass_to_txt(document):
+	i = 0
+	j = 1
+	f = open('texts.txt', 'w')
+	for t in document:
+		if i < 999:
+			f.write('%s\n'%(t['text']))
+			i +=1
+		else:
+			f.close()
+			f = open('texts%d.txt'%(j), 'w')
+			i = 0
+			j += 1
 	
-
-def synonyms(db,base):
-	
-	dados = list()
-
-
-	for words in base:
-		#try:
-		list_syn = list()
-		for t in words: 
-			pt_blob = TextBlob(u'%s'%t)
-			en_blol = pt_blob.translate(to='pt')
-			print(en_blol)
-
-			#grava(db,i,list_stem)
-			#i += 1
-
-		#except Exception as inst:
-		#	print(type(inst))
-
-def classification():
-	return 0
-
-def getLimit(coll,n):
-	return coll.find().sort('text',1).limit(n)
+	f.close()
 
 if __name__ == '__main__':
 
@@ -110,19 +93,19 @@ if __name__ == '__main__':
 	col1 = AcessaBd('baseTweetsTCC','tweets')
 	col2 = AcessaBd('baseTweetsTCC','tweetsProcessing1')
 	col3 = AcessaBd('baseTweetsTCC','tweetsProcessing2')
-	#col4 = AcessaBd('baseTweetsTCC','tweetsProcessing3')
 
 	tweets = getAll(col1)
-	#tweets_stop = getAll(col2)
-	#tweets_stem = getAll(col3)
+	tweets_stop = getAll(col2)
+
+	#pass_to_txt(tweets_stop)
 	
 	#tweets = getLimit(col2,500)
 
-	sem_stop = removeStopwords(col2,tweets)
+	print("Removendo Stop Words, Aguarde...")
+	removeStopwords(col2,tweets)
 
-	#stem_apply = steaming(col3,sem_stop)
-
-	#synonyms_apply = synonyms(col4,stem_apply)
+	print("Passando o Steamming, Aguarde...")
+	steaming(col3,tweets_stop)
 
 	print("Texto processado com sucesso")
 
