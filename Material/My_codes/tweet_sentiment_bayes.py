@@ -29,6 +29,7 @@ import numpy as np
 import pandas as pd
 import nltk
 import re
+import csv
 import json
 import sys
 from pymongo import MongoClient
@@ -38,13 +39,6 @@ client = MongoClient()
 db = client.baseTweetsTCC
 
 params = sys.argv[1:]
-
-def insert_One(tweet,sentiment):
-	##DataBase
-	db.sentiment_train.insert_one({
-			'text': tweet,
-			'sentiment': sentiment
-		})
 
 def populaBase(df):
 	records = json.loads(df.T.to_json()).values()
@@ -76,7 +70,9 @@ def read_csv():
 
 	return df_full
 
-#def write_csv():
+def write_csv(data):
+	df = pd.DataFrame(data)
+	df.to_csv('files_extern/logs.csv', mode='a', sep=';',index=False, header=False)
 
 def convert_df(df):
 	new_df = []
@@ -237,11 +233,10 @@ def roc(model,train,target):
 		fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
 		roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
-		print(fpr)
 
 	return fpr[2],tpr[2],roc_auc[2]
 
-def roc_(model, df,target):
+#def roc_(model, df,target):
 	count_vect = CountVectorizer()
 	rd = []
 	groups = 10
@@ -258,7 +253,7 @@ def roc_(model, df,target):
 		model.fit(X_train,target_train[i])
 		pred = model.predict(X_test)
 		
-def split_train_test_cross(df,k):
+#def split_train_test_cross(df,k):
 	group_test = []
 	group_train = []
 	group_t_test = []
@@ -336,6 +331,9 @@ if __name__ == '__main__':
 	v_roc_auc = []
 	df_metrics = pd.DataFrame(columns=['algoritmo', 'acuracia', 'precisao', 'recall', 'f1','erro','auc','data'])
 
+	#colunas do vetor 'algoritmo', 'acuracia', 'precisao', 'recall', 'f1','erro','auc','data'
+	l = []
+	datas = []
 
 	print("Mensurando Naive Bayes Multinominal...")
 	ac,p,r,f1,e,cm = cross_apply(nb,array_train,target_train)
@@ -348,7 +346,9 @@ if __name__ == '__main__':
 	v_fpr.append(fpr)
 	v_tpr.append(tpr)
 	v_roc_auc.append(roc_auc)
-	plot_confuse_matrix(cm)
+	#plot_confuse_matrix(cm)
+	l = 'nv',ac,p,r,f1,e,roc_auc,str(datetime.now())
+	datas.append(l)
 	print("Calculo Naive Bayes Multinomina realizado com sucesso !")
 	print('')
 	
@@ -363,6 +363,8 @@ if __name__ == '__main__':
 	v_fpr.append(fpr)
 	v_tpr.append(tpr)
 	v_roc_auc.append(roc_auc)
+	l = 'dt',ac,p,r,f1,e,roc_auc,str(datetime.now())
+	datas.append(l)
 	print("Calculo Arvore de Decisao realizado com sucesso !")
 	print('')
 
@@ -377,6 +379,8 @@ if __name__ == '__main__':
 	v_fpr.append(fpr)
 	v_tpr.append(tpr)
 	v_roc_auc.append(roc_auc)
+	l = 'ge',ac,p,r,f1,e,roc_auc,str(datetime.now())
+	datas.append(l)
 	print("Calculo Gradiente Estocastico realizado com sucesso !")
 	print('')
 
@@ -392,9 +396,12 @@ if __name__ == '__main__':
 	v_fpr.append(fpr)
 	v_tpr.append(tpr)
 	v_roc_auc.append(roc_auc)
+	l = 'rf',ac,p,r,f1,e,roc_auc,str(datetime.now())
+	datas.append(l)
 	print("Calculo Random Forest realizado com sucesso !")
 	print('')
 
+	write_csv(datas)
 	plot_roc(v_fpr,v_tpr,v_roc_auc)
 
 	#count_vect = CountVectorizer()
