@@ -104,8 +104,8 @@ if __name__ == '__main__':
 	print("Removendo Stop Words, Aguarde...")
 	removeStopwords(col2,tweets)
 
-	print("Passando o Steamming, Aguarde...")
-	steaming(col3,tweets_stop)
+	#print("Passando o Steamming, Aguarde...")
+	#steaming(col3,tweets_stop)
 
 	print("Texto processado com sucesso")
 

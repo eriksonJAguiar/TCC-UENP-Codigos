@@ -1,89 +1,60 @@
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import GaussianNB
-from sklearn.metrics import accuracy_score
-from sklearn.metrics import precision_score
+from sompy import SOM
+import matplotlib.pyplot as plt
+from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
 import pandas as pd
 from pymongo import MongoClient
 import json
 
 
-#def update():
-#	for u in users:
-#	db.usersTwitter.update_one({'_id': u['_id']},{'$set': {'profile_background_color': int(u['profile_background_color'],16)}}, upsert=False)
+client = MongoClient()
+db = client.baseTweetsTCC
 
-def date_transform(dates):
-	i = 0
-	dt = []
-	for d in dates:
-		year = d.year
-		month = d.month
-		day = d.day
-		hour = d.hour
-		minute = d.minute
-		second = d.second
+def getBase():
 
-		val = year*month*day*hour*minute*second
+	tweets = db['tweetsProcessing1'].find({})
 
-		dt.append(val)
+	return tweets
 
-		i += 1
-
-	return dt
-
-def convertions(dataframe):
-	#convert  Dates
-	dataframe['created_at'] = pd.to_datetime(dataframe.created_at)
-
-	dataframe['created_at'] = date_transform(dataframe['created_at'])
-
-	#convert location
-	enc = LabelEncoder()
-
-	enc.fit(dataframe['location'])
-
-	dataframe['location'] = enc.transform(dataframe['location'])
-
-	return dataframe
 
 
 if __name__ == '__main__':
 	
-	##DataBase
-	client = MongoClient()
-	db = client.baseTweetsTCC
+	print("Iniciando o agrupamento, aguarde...")
 
-	users = db.usersTwitter.find({},{'sentiment_mean':0,'gender':0, 'language':0,'name':0,'twitter_name':0})
+	tweets = getBase()
 
-	#for u in users:
-	#	if type(u['profile_background_color']) is str:
-	#		db.usersTwitter.update_one({'_id': u['_id']},{'$set': {'profile_background_color': int(u['profile_background_color'],16)}}, upsert=False)
 
-	users_df = pd.DataFrame(list(users))
+	tweets_df = pd.DataFrame(list(tweets))
 
-	users_df_cp = users_df.copy()
+	text = tweets_df['text']
 
-	users_df_cp = convertions(users_df_cp).astype(int)
+	t_df = pd.DataFrame()
+	t_df['text'] = text
+
+	count_vect = CountVectorizer()
+	X = count_vect.fit_transform(text)	
+
+	som = SOM(input_data)
 	
-	u = np.array(users_df_cp)
-	
-	#target = np.array([x for x in users_df['_id']])
+	som.set_parameter(neighbor=0.1, learning_rate=0.2)
 
-	km = KMeans(n_clusters=4)
+	output_map = som.train(len(X))
 
-	k = km.fit(u)
+	plt.imshow(output_map,interpolation='gaussian')
+	plt.show()
 
-	users_df_cp['target'] = k.labels_
+	#km = KMeans(n_clusters=10)
 
-	users_df_cp['created_at'] = users_df['created_at']
-	users_df_cp['location'] = users_df['location']
+	#k = km.fit(X)
 
-	records = json.loads(users_df_cp.T.to_json()).values()
+	#t_df['target'] = k.labels_
 
-	#print(records)
+	#records = json.loads(t_df.T.to_json()).values()
 
-	db.kmeans.insert(records)
+	#db.groups_texts.insert(records)
+
+	print("Grupos processados com sucesso")
 
 	
