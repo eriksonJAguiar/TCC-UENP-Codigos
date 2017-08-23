@@ -1,5 +1,4 @@
 from sklearn.cluster import KMeans
-from sompy import SOM
 import matplotlib.pyplot as plt
 from sklearn.feature_extraction.text import CountVectorizer
 import numpy as np
@@ -36,24 +35,24 @@ if __name__ == '__main__':
 	count_vect = CountVectorizer()
 	X = count_vect.fit_transform(text)	
 
-	som = SOM(input_data)
+	#som = SOM(input_data)
 	
-	som.set_parameter(neighbor=0.1, learning_rate=0.2)
+	#som.set_parameter(neighbor=0.1, learning_rate=0.2)
 
-	output_map = som.train(len(X))
+	#output_map = som.train(len(X))
 
-	plt.imshow(output_map,interpolation='gaussian')
-	plt.show()
+	#plt.imshow(output_map,interpolation='gaussian')
+	#plt.show()
 
-	#km = KMeans(n_clusters=10)
+	km = KMeans(n_clusters=10)
 
-	#k = km.fit(X)
+	k = km.fit(X)
 
-	#t_df['target'] = k.labels_
+	t_df['target'] = k.labels_
 
-	#records = json.loads(t_df.T.to_json()).values()
+	records = json.loads(t_df.T.to_json()).values()
 
-	#db.groups_texts.insert(records)
+	db.groups_texts.insert(records)
 
 	print("Grupos processados com sucesso")
 

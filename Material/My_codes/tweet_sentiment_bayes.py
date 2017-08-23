@@ -53,12 +53,6 @@ def getSTrain():
 
 	return tweets
 
-def getSTest():
-	
-	tweets = db['tweetsProcessing1'].find({}).limit(100)
-
-	return tweets
-
 def read_csv():
 
 	df1 = pd.DataFrame.from_csv('files_extern/tweets-1.csv',sep=';',index_col=0,encoding ='ISO-8859-1')
@@ -155,8 +149,6 @@ def cross_apply(model,train,target):
 	f1 = sum(f1_v)/len(f1_v)
 	r = sum(r_v)/len(r_v)
 	e = sum(e_v)/len(e_v)
-	#cm = sum(cm_v)/len(cm_v)
-	#cm.astype(int)
 
 	return ac,p,r,f1,e,cm_v
 
@@ -224,8 +216,8 @@ def plot_roc(fpr,tpr,roc_auc):
 	plt.plot(fpr[1],tpr[1],color='yellow',lw=lw,label='UAC(svm = %0.2f)' % roc_auc[1])
 	plt.plot(fpr[2],tpr[2],color='blue',lw=lw,label='UAC(dt = %0.2f)' % roc_auc[2])
 	plt.plot(fpr[3],tpr[3],color='green',lw=lw,label='UAC(ged = %0.2f)' % roc_auc[3])
-	plt.plot(fpr[4],tpr[4],color='green',lw=lw,label='UAC(rf = %0.2f)' % roc_auc[4])
-	plt.plot(fpr[5],tpr[5],color='green',lw=lw,label='UAC(rl = %0.2f)' % roc_auc[5])
+	plt.plot(fpr[4],tpr[4],color='purple',lw=lw,label='UAC(rf = %0.2f)' % roc_auc[4])
+	plt.plot(fpr[5],tpr[5],color='orange',lw=lw,label='UAC(rl = %0.2f)' % roc_auc[5])
 	plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
 	plt.xlim([0.0, 1.0])
 	plt.ylim([0.0, 1.0])
@@ -272,7 +264,7 @@ if __name__ == '__main__':
 	target_train = train_df['opiniao'].values
 
 	#classificadores
-	nb = MultinomialNB(alpha = 0.000000000001)
+	nb = MultinomialNB(alpha = 0.000001)
 
 	dt = tree.DecisionTreeClassifier(criterion='gini')
 
@@ -357,7 +349,7 @@ if __name__ == '__main__':
 	print("Erro = %f"%(e))
 	cm_mean = sum(cm)/len(cm)
 	cm_mean.astype(int)
-	plot_confuse_matrix(cm_mean)
+	#plot_confuse_matrix(cm_mean)
 	fpr,tpr,roc_auc = roc(cm)
 	v_fpr.append(fpr)
 	v_tpr.append(tpr)
@@ -377,7 +369,7 @@ if __name__ == '__main__':
 	print("Erro = %f"%(e))
 	cm_mean = sum(cm)/len(cm)
 	cm_mean.astype(int)
-	plot_confuse_matrix(cm_mean)
+	#plot_confuse_matrix(cm_mean)
 	fpr,tpr,roc_auc = roc(cm)
 	v_fpr.append(fpr)
 	v_tpr.append(tpr)
@@ -407,7 +399,7 @@ if __name__ == '__main__':
 	print('')
 
 	write_csv(datas,'logs')
-	plot_roc(v_fpr,v_tpr,v_roc_auc)
+	#plot_roc(v_fpr,v_tpr,v_roc_auc)
 
 	print("Algoritmo processado com sucesso !!")
 	
