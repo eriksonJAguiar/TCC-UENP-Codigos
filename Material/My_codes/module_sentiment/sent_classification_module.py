@@ -35,6 +35,8 @@ import re
 import csv
 import json
 import sys
+import statistics
+import math
 from datetime import datetime
 from class_roc import Roc
 
@@ -58,6 +60,12 @@ class SentClassifiers():
 	def write_csv(self,data,file):
 		df = pd.DataFrame(data)
 		df.to_csv('files_extern/'+file+'.csv', mode='a', sep=';',index=False, header=False)
+
+	def getSTrain():
+	
+		tweets = db['sentiment_train'].find({},{'_id':0, 'index':0})
+
+		return tweets
 
 	def convert_df(self,df):
 		new_df = []
@@ -95,8 +103,6 @@ class SentClassifiers():
 		dataframe['tweet'] = self.clean(dataframe)
 
 		dataframe = dataframe.reset_index()
-
-		#populaBase(dataframe)
 
 		return dataframe
 
@@ -144,15 +150,172 @@ class SentClassifiers():
 			f1_v.append(f1)
 			e_v.append(e)
 
-		ac = sum(ac_v)/len(ac_v)
-		p = sum(p_v)/len(p_v)
-		f1 = sum(f1_v)/len(f1_v)
-		r = sum(r_v)/len(r_v)
-		e = sum(e_v)/len(e_v)
-		cm_mean = sum(cm_v)/len(cm_v)
-		cm_mean.astype(int)
+		#ac = sum(ac_v)/len(ac_v)
+		#p = sum(p_v)/len(p_v)
+		#f1 = sum(f1_v)/len(f1_v)
+		#r = sum(r_v)/len(r_v)
+		#e = sum(e_v)/len(e_v)
+		ac = statistics.median(ac_v)
+		p = statistics.median(p_v)
+		f1 = statistics.median(f1_v)
+		r = statistics.median(r_v)
+		e = statistics.median(e_v)
+		cm_mean = self.matrix_confuse_median(cm_v)
+		#cm_mean = sum(cm_v)/len(cm_v)
+		#cm_mean.astype(int)
 
 		return ac,p,r,f1,e,cm_mean
+
+	def matrix_confuse_median(self,cm):
+		pos = dict()
+
+		for i in range(1,10):
+			pos[i] = []
+
+		for cf in cm:
+			x = 1
+			for i in range(0,3):
+				for j in range(0,3):
+					pos[x].append(cf[i][j])
+					x += 1
+
+		part1 = []
+		part2 = []
+		part3 = []
+
+		for i in range(1,10):
+			if i <= 3 :
+				part1.append(math.ceil(statistics.median(pos[i])))	
+
+			elif i > 3 and i <= 6:
+				part2.append(math.ceil(statistics.median(pos[i])))
+
+			else:
+				part3.append(math.ceil(statistics.median(pos[i])))
+
+
+		m_confuse = np.array([part1,part2,part3])
+
+		return m_confuse
+
+	def more_voted(self,votes):
+		rank = 0
+		if votes[0] > votes[1] and votes[0] > votes[2]:
+			rank = -1
+
+		elif votes[1] > votes[0] and votes[1] > votes[2]:
+			rank = 0
+
+		elif votes[2] > votes[0] and votes[2] > votes[1]:
+			rank = 1
+
+		return rank
+
+	def votation(self,votes_i,weight):
+		votes = []
+		for i in range(-1,2):
+			v = votes_i.count(i)
+			for j in range(len(votes_i)):
+				if votes_i[j] == i:
+					v *= weight[j]
+
+			votes.append(v)
+
+		return votes
+
+	def percorre_pred(self,tab_pred,md):
+		tab_aux = []
+		for i in range(len(tab_pred[md[0]][0])):
+			values = []
+			for m in md:
+				values.append(tab_pred[m][0][i])
+
+			tab_aux.append(values)
+
+		tab = dict()
+
+		for m in md:
+			tab[m] = []
+
+		for tb in tab_aux:
+			j = 0
+			for m in md:
+				tab[m].append(tb[j])
+				j += 1
+
+		return tab	
+
+	def cross_apply_k(self,k,models,train,target):
+
+		count_vect = CountVectorizer()
+		X = count_vect.fit_transform(train)
+		kf = KFold(k, shuffle=True, random_state=1)
+		k_esimo = 1
+
+		m = ['nv','svm','dt','rf','gd','rl']
+
+		pred_more_voted = dict()
+		original_label = dict()
+
+		for train_index,teste_index in kf.split(X,target):
+			tab_pred = dict()
+			tab_pred_aux = dict()
+		
+			tab_pred['nv'] = []
+			tab_pred['svm'] = []
+			tab_pred['dt'] = []
+			tab_pred['rf'] = []
+			tab_pred['gd'] = []
+			tab_pred['rl'] = []
+
+			tab_pred_aux = tab_pred
+
+			for i in range(len(models['model'])):
+				X_train, X_test = X[train_index],X[teste_index]
+				y_train, y_test = target[train_index], target[teste_index]
+				models['model'][i].fit(X_train,y_train)
+				pred = models['model'][i].predict(X_test)
+				tab_pred[m[i]].append(pred)
+
+			tab_pred_aux = self.percorre_pred(tab_pred,m)
+			more_voted = []
+
+			for j in range(len(tab_pred_aux[m[0]])):
+				vts = []
+				for md in m:
+					vts.append(tab_pred_aux[md][j]) 
+					
+				votes = self.votation(vts,models['peso'])
+
+				more_voted.append(self.more_voted(votes))
+
+
+			pred_more_voted[str(k_esimo)] = more_voted
+			original_label[str(k_esimo)] = y_test.tolist()
+			k_esimo += 1
+
+		return pred_more_voted, original_label
+
+	def ranking(self,k,pesos):
+		models = dict()
+		models['model'] = []
+		models['peso'] = pesos
+		nv = MultinomialNB(alpha=0.000001)
+		models['model'].append(nv)
+		dt = tree.DecisionTreeClassifier(criterion='gini')
+		models['model'].append(dt)
+		csvm = svm.SVC(gamma=0.001,C=100,decision_function_shape='ovr')
+		models['model'].append(csvm)
+		sgdc = SGDClassifier(loss="log", penalty="l2")
+		models['model'].append(sgdc)
+		rf = RandomForestClassifier()
+		models['model'].append(rf)
+		lr = LogisticRegression(penalty='l2')
+		models['model'].append(lr)
+
+		rank = self.cross_apply_k(k,models,self.array_train,self.target_train)
+
+		return rank
 
 	def roc(self,cm):
 
@@ -223,6 +386,24 @@ class SentClassifiers():
 		plt.legend(loc="lower right")
 		plt.show()
 
+	def plot_roc_all(self,fpr,tpr,roc_auc,label):
+		plt.figure()
+		lw = 2
+		plt.plot(fpr[0],tpr[0],color='red',lw=lw,label='UAC(%s = %0.2f)' % (label[0],roc_auc[0]))
+		plt.plot(fpr[1],tpr[1],color='blue',lw=lw,label='UAC(%s = %0.2f)' % (label[1],roc_auc[1]))
+		plt.plot(fpr[2],tpr[2],color='yellow',lw=lw,label='UAC(%s = %0.2f)' % (label[2],roc_auc[2]))
+		plt.plot(fpr[3],tpr[3],color='green',lw=lw,label='UAC(%s = %0.2f)' % (label[3],roc_auc[3]))
+		plt.plot(fpr[4],tpr[4],color='purple',lw=lw,label='UAC(%s = %0.2f)' % (label[4],roc_auc[4]))
+		plt.plot(fpr[5],tpr[5],color='orange',lw=lw,label='UAC(%s = %0.2f)' % (label[5],roc_auc[5]))
+		plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
+		plt.xlim([0.0, 1.0])
+		plt.ylim([0.0, 1.0])
+		plt.xlabel('Taxa de Falso Positivo')
+		plt.ylabel('Taxa de Verdadeiro Positivo')
+		plt.title('Grafico ROC')
+		plt.legend(loc="lower right")
+		plt.show()
+
 	def plot_confuse_matrix(self,cm):
 		labels = ['Negativo', 'Neutro','Positivo']
 		cm = np.ceil(cm)
@@ -273,7 +454,7 @@ class SentClassifiers():
 
 	def CSuportVectorMachine(self,gamma=0.001,C=100,decision_function_shape='ovr'):
 
-		csvm = svm.SVC(gamma,C,decision_function_shape)
+		csvm = svm.SVC(gamma=gamma,C=C,decision_function_shape=decision_function_shape)
 
 		ac,p,r,f1,e,cm = self.cross_apply(csvm,self.array_train,self.target_train)
 		roc_  = Roc()
@@ -297,7 +478,6 @@ class SentClassifiers():
 		roc_.set_tpr(tpr)
 		roc_.set_auc(auc)
 		log = 'ge',ac,p,r,f1,e,str(datetime.now())
-		self.write_csv(log,'log_2')
 		
 		return ac,p,r,f1,e,cm,roc_
 
@@ -313,8 +493,7 @@ class SentClassifiers():
 		roc_.set_auc(auc)
 		log = 'rf',ac,p,r,f1,e,str(datetime.now())
 
-		return ac,p,r,f1,e,cm,roc_
-	
+		return ac,p,r,f1,e,cm,roc_	
 
 	def CLogistRegression(self,penalty="l2"):
 
