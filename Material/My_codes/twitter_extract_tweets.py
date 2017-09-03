@@ -10,8 +10,9 @@ import json
 import os.path
 import time
 
+
 #timeout
-timeout = 40
+timeout = 60
 timeout_start = time.time()
 
 #Credencias de acesso App Twitter
@@ -30,23 +31,65 @@ twitter = TwitterAPI(consumer_key, consumer_secret,auth_type='oAuth2')
 client = MongoClient()
 db = client.baseTweetsTCC
 
-result_max = 1100
+def saveTrends(tag,date):
+	try:
+		db.trends.insert_one(
+						{
+							'tag':tag,
+							'date':date
+						}
+					)
+	except Exception as inst:
+		pass
+
+result_max = 10000
 result_cont = 0
 dh = datetime.now()
-tags = ['hiv','aids','viagra','tinder','menopausa','dst','ist','sifilis','usecamisinha','hpv','camisinha']
+#tags = ['hiv','aids','viagra','tinder','menopausa','dst','ist','sifilis','usecamisinha','hpv','camisinha']
+tags = []
+#param = sys.argv[1:]
+#print(param[0])
 
-param = sys.argv[1:]
-print(param[0])
+trends_br = twitter.request('trends/place', {'id':	23424768})
+trends_eua = twitter.request('trends/place', {'id':	23424977})
+trends_eng = twitter.request('trends/place', {'id': 24554868})
+
+n_trends = 10
+
+i = 0
+
+for br in trends_br.get_iterator():
+	tags.append(br['name'])
+	saveTrends(br['name'],dh.now())
+	i += 1
+	if i > n_trends: break
+
+i = 0
+for eua in trends_eua.get_iterator():
+	tags.append(eua['name'])
+	saveTrends(eua['name'],dh.now())
+	if i > n_trends: break
+	i += 1
+
+i = 0
+for eng in trends_eua.get_iterator():
+	tags.append(eng['name'])
+	saveTrends(eng['name'],dh.now())
+	if i > n_trends: break
+	i += 1
+
+#print(tags)
+
 
 while result_cont < result_max:
 	#print('Buscando...\n')
 	#print('Isso Pode Demorar Um Pouco..\n')
 	tag_cont = 0
 	while tag_cont < len(tags):
-		r = twitter.request('search/tweets', {'q': tags[tag_cont], 'lang':'pt-br','locale':'br', 'count':'10000', 'since':'2017-04-02', 'until':param[0]})
+		r = twitter.request('search/tweets', {'q': tags[tag_cont]})
 		for item in r.get_iterator():
 			#tweet = 'ID: %d, Usuario: %s, texto: %s, Horario: %s, Criado: %s \n'%(item['id'],item['user']['screen_name'],item['text'],dh.now(),item['created_at'])
-			#print(tweet)
+			#print(item['text'])
 			try:
 				db.tweets.insert_one(
 					{
