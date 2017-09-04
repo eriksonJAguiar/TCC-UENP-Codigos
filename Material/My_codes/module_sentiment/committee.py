@@ -5,7 +5,7 @@ from datetime import datetime as dt
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers()
+	sent = SentClassifiers('dataset-portuguese')
 
 	roc = Roc()
 

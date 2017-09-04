@@ -43,19 +43,13 @@ from class_roc import Roc
 class SentClassifiers():
 
 
-	def read_csv(self,folder):
+	def read_csv(self,file):
 
-		df1 = pd.DataFrame.from_csv('%s/tweets-1.csv'%(folder),sep=';',index_col=0,encoding ='ISO-8859-1')
+		df1 = pd.DataFrame.from_csv('../files_extern/%s.csv'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
 
 		df1 = df1.reset_index()
 
-		df2 = pd.DataFrame.from_csv('%s/tweets-2.csv'%(folder),sep=';',index_col=0,encoding ='ISO-8859-1')
-
-		df2 = df2.reset_index()
-
-		df_full = pd.concat([df1,df2])
-
-		return df_full
+		return df1
 
 	def write_csv(self,data,file):
 		df = pd.DataFrame(data)
@@ -95,8 +89,8 @@ class SentClassifiers():
 
 		return new_df
 
-	def initial(self):
-		dataframe = self.read_csv('../files_extern')
+	def initial(self,file):
+		dataframe = self.read_csv(file)
 
 		dataframe['opiniao'] = self.convert_df(dataframe)
 
@@ -107,9 +101,9 @@ class SentClassifiers():
 		return dataframe
 
 	#construtor
-	def __init__(self):
+	def __init__(self,file):
 		
-		self.train_df = self.initial()
+		self.train_df = self.initial(file)
 		
 		self.array_train = self.train_df['tweet'].values
 

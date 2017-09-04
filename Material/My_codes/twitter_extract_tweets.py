@@ -53,6 +53,8 @@ tags = []
 trends_br = twitter.request('trends/place', {'id':	23424768})
 trends_eua = twitter.request('trends/place', {'id':	23424977})
 trends_eng = twitter.request('trends/place', {'id': 24554868})
+trends_esp = twitter.request('trends/place', {'id': 23424950})
+trends_ger = twitter.request('trends/place', {'id': 23424829})
 
 n_trends = 10
 
@@ -75,6 +77,22 @@ i = 0
 for eng in trends_eua.get_iterator():
 	tags.append(eng['name'])
 	saveTrends(eng['name'],dh.now())
+	if i > n_trends: break
+	i += 1
+
+i = 0
+
+for esp in trends_esp.get_iterator():
+	tags.append(esp['name'])
+	saveTrends(esp['name'],dh.now())
+	if i > n_trends: break
+	i += 1
+
+i = 0
+
+for ger in trends_ger.get_iterator():
+	tags.append(ger['name'])
+	saveTrends(ger['name'],dh.now())
 	if i > n_trends: break
 	i += 1
 
