@@ -19,18 +19,18 @@ api = tweepy.API(authentication)
 
 if __name__ == '__main__':
 
-	tags = list()	
+	tags = []	
 	while True:
 		trends = api.trends_place(23424768)
 		data = trends[0]
 		trend = data['trends']
+		l = []
 		for item in trend:
-			name = item['name']
-			if not tags:
-				tags.append(name)
-			elif tags in name:
-				tags.append(name)
+			name = str(item['name'])
+			l.append(name)
 
+		tags.extend(l)
 		print(tags)
+		print('-------------')
 
 		
