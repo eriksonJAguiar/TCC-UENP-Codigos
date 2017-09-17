@@ -7,9 +7,31 @@ if __name__ == '__main__':
 
 	sent = SentClassifiers('dataset-portuguese')
 
-	roc = Roc()
+	results = []
+	acuracias = []
 
-	pesos = [1,1,1,1,1,1]
+	nv_acc,nv_ac,_,_,_,_,_,_ = sent.CMultinomialNV()
+	dt_acc,dt_ac,_,_,_,_,_,_ = sent.CDecisionTree()
+	svm_acc,svm_ac,_,_,_,_,_,_ = sent.CSuportVectorMachine()
+	gd_acc,gd_ac,_,_,_,_,_,_ = sent.CGradientDescEst()
+	rf_acc,rf_ac,_,_,_,_,_,_ = sent.CRandomForest()
+	rl_acc,rl_ac,_,_,_,_,_,_ = sent.CLogistRegression()
+
+	results.append(nv_ac)
+	results.append(svm_ac)
+	results.append(dt_ac)
+	results.append(rf_ac)
+	results.append(gd_ac)
+	results.append(rl_ac)
+
+	acuracias.append(nv_acc)
+	acuracias.append(svm_acc)
+	acuracias.append(dt_acc)
+	acuracias.append(rf_acc)
+	acuracias.append(gd_acc)
+	acuracias.append(rl_acc)
+
+	pesos = sent.calc_weigth(acuracias)
 
 	k = 10
 
@@ -18,22 +40,9 @@ if __name__ == '__main__':
 	line = []
 
 	names = ['naive','svm','tree','forest','gradient','logistic','committee']
-	results = []
 
 	ac,cmm_ac,p,r,f1,e,_ = sent.mensure(k,pred,original)
-	_,nv_ac,_,_,_,_,_,_ = sent.CMultinomialNV()
-	_,dt_ac,_,_,_,_,_,_ = sent.CDecisionTree()
-	_,svm_ac,_,_,_,_,_,_ = sent.CSuportVectorMachine()
-	_,gd_ac,_,_,_,_,_,_ = sent.CGradientDescEst()
-	_,rf_ac,_,_,_,_,_,_ = sent.CRandomForest()
-	_,rl_ac,_,_,_,_,_,_ = sent.CLogistRegression()
 
-	results.append(nv_ac)
-	results.append(svm_ac)
-	results.append(dt_ac)
-	results.append(rf_ac)
-	results.append(gd_ac)
-	results.append(rl_ac)
 	results.append(cmm_ac)
 
 	print("Metricas")

@@ -40,6 +40,8 @@ import math
 from datetime import datetime
 from class_roc import Roc
 
+
+
 class SentClassifiers():
 
 
@@ -64,27 +66,28 @@ class SentClassifiers():
 	def convert_df(self,df):
 		new_df = []
 		for d in df['opiniao']:
-			if d == 'Positivo':
+			if d == 'Positivo' or d =='Positive':
 				new_df.append(1)
 			
-			elif d == 'Neutro':
+			elif d == 'Neutro' or d =='Neutral':
 				new_df.append(0)
 			
-			elif d == 'Negativo':
+			elif d == 'Negativo' or d == 'Negative':
 				new_df.append(-1)
 
+		
 		return new_df
 
 	def clean(self,dataframe):
 		new_df = []
 		for df in dataframe['tweet']:
 			expr = re.sub(r"http\S+", "", df)
-			expr = re.sub(r"@\S+","",expr)
-			
-			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S'#]+") if not w in nltk.corpus.stopwords.words('portuguese')]
+			expr = re.sub(r"[@#]\S+","",expr)
+			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
+			print(frase)
 			new_df.append(frase)
 
 		return new_df
@@ -188,28 +191,27 @@ class SentClassifiers():
 		return m_confuse
 
 	def more_voted(self,votes):
-		rank = 0
-		if votes[0] > votes[1] and votes[0] > votes[2]:
-			rank = -1
+		rank = [-1,0,1]
+		aux = votes[0]
+		pos = 0
+		for i in range(len(votes)-1):
+			if votes[i+1] > votes[i]:
+				aux = votes[i+1]
+				pos = i+1 
 
-		elif votes[1] > votes[0] and votes[1] > votes[2]:
-			rank = 0
-
-		elif votes[2] > votes[0] and votes[2] > votes[1]:
-			rank = 1
-
-		return rank
+		return rank[pos]
 
 	def votation(self,votes_i,weight):
 		votes = []
-		best = []
 		for i in range(-1,2):
-			v = votes_i.count(i)
+			#v = votes_i.count(i)
+			v = 0
 			for j in range(len(votes_i)):
 				if votes_i[j] == i:
-					v *= weight[j]
+					v += weight[j]
 
 			votes.append(v)
+
 
 		return votes
 
@@ -294,13 +296,13 @@ class SentClassifiers():
 		models['model'].append(nv)
 		dt = tree.DecisionTreeClassifier(criterion='gini')
 		models['model'].append(dt)
-		csvm = svm.SVC(gamma=0.001,C=100,decision_function_shape='ovr')
+		csvm = svm.SVC(kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr')
 		models['model'].append(csvm)
 		sgdc = SGDClassifier(penalty="l2")
 		models['model'].append(sgdc)
 		rf = RandomForestClassifier()
 		models['model'].append(rf)
-		lr = LogisticRegression(penalty='l2')
+		lr = LogisticRegression(penalty='l2',multi_class='ovr')
 		models['model'].append(lr)
 
 		pred,original = self.cross_apply_best(k,models,self.array_train,self.target_train)
@@ -398,6 +400,18 @@ class SentClassifiers():
 
 		return roc
 
+	def calc_weigth(self,acc):
+
+		ac = []
+		soma = sum(acc)
+
+		for i in range(len(acc)):
+			ac.append(acc[i]/soma)
+
+		return ac
+
+
+
 	def plot_roc(self,fpr,tpr,roc_auc,color,label):
 		plt.figure()
 		lw = 2
@@ -481,9 +495,9 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
-	def CSuportVectorMachine(self,gamma=0.001,C=100,decision_function_shape='ovr'):
+	def CSuportVectorMachine(self,kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr'):
 
-		csvm = svm.SVC(gamma=gamma,C=C,decision_function_shape=decision_function_shape)
+		csvm = svm.SVC(kernel=kernel,gamma=gamma,C=C,decision_function_shape=decision_function_shape)
 
 		ac,ac_v,p,r,f1,e,cm = self.cross_apply(csvm,self.array_train,self.target_train)
 		roc_  = Roc()
@@ -517,9 +531,9 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm,roc_	
 
-	def CLogistRegression(self,penalty="l2"):
+	def CLogistRegression(self,penalty="l2",multi_class="ovr"):
 
-		lr = LogisticRegression(penalty=penalty)
+		lr = LogisticRegression(penalty=penalty,multi_class=multi_class)
 		ac,ac_v,p,r,f1,e,cm = self.cross_apply(lr,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
@@ -528,4 +542,3 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
-	

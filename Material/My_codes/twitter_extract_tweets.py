@@ -12,7 +12,7 @@ import time
 
 
 #timeout
-timeout = 60
+timeout = 60*3
 timeout_start = time.time()
 
 #Credencias de acesso App Twitter
