@@ -39,6 +39,7 @@ import statistics
 import math
 from datetime import datetime
 from class_roc import Roc
+from unicodedata import normalize
 
 
 
@@ -83,11 +84,11 @@ class SentClassifiers():
 		for df in dataframe['tweet']:
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
+			expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
 			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
-			print(frase)
 			new_df.append(frase)
 
 		return new_df
@@ -199,7 +200,7 @@ class SentClassifiers():
 				aux = votes[i+1]
 				pos = i+1 
 
-		return rank[pos]
+		return rank[pos],aux
 
 	def votation(self,votes_i,weight):
 		votes = []
@@ -211,7 +212,6 @@ class SentClassifiers():
 					v += weight[j]
 
 			votes.append(v)
-
 
 		return votes
 
@@ -244,7 +244,7 @@ class SentClassifiers():
 		kf = KFold(k, shuffle=True, random_state=1)
 		k_esimo = 1
 
-		m = ['nv','svm','dt','rf','gd','rl']
+		m = ['nv','svm','dt','rf','rl']
 
 		pred_more_voted = dict()
 		original_label = dict()
@@ -257,7 +257,6 @@ class SentClassifiers():
 			tab_pred['svm'] = []
 			tab_pred['dt'] = []
 			tab_pred['rf'] = []
-			tab_pred['gd'] = []
 			tab_pred['rl'] = []
 
 			tab_pred_aux = tab_pred
@@ -278,8 +277,8 @@ class SentClassifiers():
 					vts.append(tab_pred_aux[md][j]) 
 					
 				votes = self.votation(vts,models['peso'])
-
-				more_voted.append(self.more_voted(votes))
+				best,_ = self.more_voted(votes)
+				more_voted.append(best)
 
 
 			pred_more_voted[str(k_esimo)] = more_voted
@@ -298,8 +297,8 @@ class SentClassifiers():
 		models['model'].append(dt)
 		csvm = svm.SVC(kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr')
 		models['model'].append(csvm)
-		sgdc = SGDClassifier(penalty="l2")
-		models['model'].append(sgdc)
+		#sgdc = SGDClassifier(penalty="l2")
+		#models['model'].append(sgdc)
 		rf = RandomForestClassifier()
 		models['model'].append(rf)
 		lr = LogisticRegression(penalty='l2',multi_class='ovr')
@@ -410,8 +409,6 @@ class SentClassifiers():
 
 		return ac
 
-
-
 	def plot_roc(self,fpr,tpr,roc_auc,color,label):
 		plt.figure()
 		lw = 2
@@ -507,18 +504,6 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
-	def CGradientDescEst(self, penalty="l2"):
-
-		sgdc = SGDClassifier(penalty=penalty)
-
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(sgdc,self.array_train,self.target_train)
-		roc_  = Roc()
-		roc_ = self.roc(cm)
-
-		log = 'ge',ac,p,r,f1,e,str(datetime.now())
-		
-		return ac,ac_v,p,r,f1,e,cm,roc_
-
 	def CRandomForest(self):
 		
 		rf = RandomForestClassifier()
@@ -541,4 +526,60 @@ class SentClassifiers():
 		log = 'rl',ac,p,r,f1,e,str(datetime.now())
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
+
+	def committee_prob(self,text):
+
+		count_vect = CountVectorizer()
+		df = pd.DataFrame(columns=['tweet','index'])
+		df['tweet'] = [text]
+		df['tweet'] = self.clean(df)
+		test = df['tweet'].values
+		X = count_vect.fit_transform(self.array_train)
+		test = count_vect.transform(test)
+		
+
+		ac_nv,_,_,_,_,_,_,_ = self.CMultinomialNV()
+		ac_dt,_,_,_,_,_,_,_ = self.CDecisionTree()
+		ac_svm,_,_,_,_,_,_,_ = self.CSuportVectorMachine()
+		ac_rf,_,_,_,_,_,_,_ = self.CRandomForest()
+		ac_rl,_,_,_,_,_,_,_ = self.CLogistRegression()
+
+		acc = []
+
+		acc.append(ac_nv)
+		acc.append(ac_svm)
+		acc.append(ac_dt)
+		acc.append(ac_rf)
+		acc.append(ac_rl)
+
+		pesos = self.calc_weigth(acc)
+
+
+		models = []
+		nv = MultinomialNB(alpha=0.000001)
+		models.append(nv)
+		dt = tree.DecisionTreeClassifier(criterion='gini')
+		models.append(dt)
+		csvm = svm.SVC(kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr')
+		models.append(csvm)
+		rf = RandomForestClassifier()
+		models.append(rf)
+		lr = LogisticRegression(penalty='l2',multi_class='ovr')
+		models.append(lr)
+
+		pred = []
+		for model in models:
+			model.fit(X,self.target_train)
+			p = model.predict(test)
+			pred.append(np.asscalar(p))
+
+		votes = self.votation(pred,pesos)
+		target,prob = self.more_voted(votes)
+
+		return target, prob
+
+
+
+
+
 
