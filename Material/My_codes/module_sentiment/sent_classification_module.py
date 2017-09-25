@@ -1,6 +1,6 @@
 #Modelos de classificacao
 from sklearn.model_selection import train_test_split
-from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import MultinomialNB, BernoulliNB
 from sklearn import tree
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
@@ -295,7 +295,7 @@ class SentClassifiers():
 		models['model'].append(nv)
 		dt = tree.DecisionTreeClassifier(criterion='gini')
 		models['model'].append(dt)
-		csvm = svm.SVC(kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr')
+		csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
 		models['model'].append(csvm)
 		#sgdc = SGDClassifier(penalty="l2")
 		#models['model'].append(sgdc)
@@ -472,6 +472,7 @@ class SentClassifiers():
 	def CMultinomialNV(self,alpha = 0.000001):
 
 		nb = MultinomialNB(alpha)
+		#nb = BernoulliNB(alpha,binarize=0.8)
 
 		ac,ac_v,p,r,f1,e,cm = self.cross_apply(nb,self.array_train,self.target_train)
 		roc_  = Roc()
@@ -492,7 +493,7 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
-	def CSuportVectorMachine(self,kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr'):
+	def CSuportVectorMachine(self,kernel='linear',gamma='auto',C=100,decision_function_shape='ovr'):
 
 		csvm = svm.SVC(kernel=kernel,gamma=gamma,C=C,decision_function_shape=decision_function_shape)
 
