@@ -4,7 +4,7 @@ from class_roc import Roc
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-portuguese')
+	sent = SentClassifiers('dataset-english2')
 
 	nv_roc = Roc()
 	svm_roc = Roc()

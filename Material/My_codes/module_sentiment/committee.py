@@ -74,13 +74,17 @@ if __name__ == '__main__':
 
 	pred,original = sent.committee(k,pesos)
 
+
 	line = []
 
-	names = ['naive','svm','tree','forest','logistic','committee']
+	names = ['naive','svm','tree','forest','logistic','cm','cm2']
 
 	ac,cmm_ac,p,r,f1,e,_ = sent.mensure(k,pred,original)
 
+	ac2,cmm_ac2,p2,r2,f12,e2,_ = sent.committee2(k,pesos)
+
 	results.append(cmm_ac)
+	results.append(cmm_ac2)
 
 	print("Comitê")
 	print("Acuracia %f"%ac)
@@ -88,6 +92,14 @@ if __name__ == '__main__':
 	print("Recall %f"%r)
 	print("F1 Score %f"%p)
 	print("Erro %f"%e)
+	print("--------------------------")
+
+	print("Comitê 2")
+	print("Acuracia %f"%ac2)
+	print("Precisao %f"%p2)
+	print("Recall %f"%r2)
+	print("F1 Score %f"%p2)
+	print("Erro %f"%e2)
 	print("--------------------------")
 
 	l = ac,p,r,f1,e,str(dt.now())

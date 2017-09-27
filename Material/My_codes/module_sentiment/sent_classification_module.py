@@ -5,7 +5,7 @@ from sklearn import tree
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn import svm
 
 #Metricas
@@ -84,7 +84,7 @@ class SentClassifiers():
 		for df in dataframe['tweet']:
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
-			expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
+			#expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
 			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
 			frase = ""
 			for f in filtrado:
@@ -117,6 +117,49 @@ class SentClassifiers():
 
 
 	def cross_apply(self,model,train,target):
+
+		count_vect = CountVectorizer()
+		X = count_vect.fit_transform(train)
+		kf = KFold(10, shuffle=True, random_state=1)
+
+		ac_v = []
+		cm_v = []
+		p_v = []
+		r_v = []
+		f1_v = []
+		e_v = []
+		fpr = []
+		tpr = []
+
+
+		for train_index,teste_index in kf.split(X,target):
+			X_train, X_test = X[train_index],X[teste_index]
+			y_train, y_test = target[train_index], target[teste_index]
+			model.fit(X_train,y_train)
+			pred = model.predict(X_test)
+			ac = accuracy_score(y_test, pred)
+			p = precision_score(y_test, pred,average='weighted')
+			r = recall_score(y_test, pred,average='weighted')
+			f1 = (2*p*r)/(p+r)
+			e = mean_squared_error(y_test, pred)
+			cm = confusion_matrix(y_test,pred)
+			cm_v.append(cm)
+			ac_v.append(ac)
+			p_v.append(p)
+			r_v.append(r)
+			f1_v.append(f1)
+			e_v.append(e)
+
+		ac = statistics.median(ac_v)
+		p = statistics.median(p_v)
+		f1 = statistics.median(f1_v)
+		r = statistics.median(r_v)
+		e = statistics.median(e_v)
+		cm_median = self.matrix_confuse_median(cm_v)
+
+		return ac,ac_v,p,r,f1,e,cm_median
+
+#	def cross_apply_best2(self,model,train,target,pesos):
 
 		count_vect = CountVectorizer()
 		X = count_vect.fit_transform(train)
@@ -287,6 +330,7 @@ class SentClassifiers():
 
 		return pred_more_voted, original_label
 
+
 	def committee(self,k,pesos):
 		models = dict()
 		models['model'] = []
@@ -297,8 +341,6 @@ class SentClassifiers():
 		models['model'].append(dt)
 		csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
 		models['model'].append(csvm)
-		#sgdc = SGDClassifier(penalty="l2")
-		#models['model'].append(sgdc)
 		rf = RandomForestClassifier()
 		models['model'].append(rf)
 		lr = LogisticRegression(penalty='l2',multi_class='ovr')
@@ -307,6 +349,22 @@ class SentClassifiers():
 		pred,original = self.cross_apply_best(k,models,self.array_train,self.target_train)
 
 		return pred,original
+	
+	def committee2(self,k,pesos):
+		#'naive','svm','tree','forest','logistic'
+		nv = MultinomialNB(alpha=0.000001)
+		dt = tree.DecisionTreeClassifier(criterion='gini')
+		csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
+		rf = RandomForestClassifier()
+		lr = LogisticRegression(penalty='l2',multi_class='ovr')
+
+		model = VotingClassifier(estimators=[('nv', nv), ('svm',csvm), ('dt',dt) ,('rf', rf), ('lr',lr)], weights=pesos,voting='hard')
+
+
+		ac,ac_v,p,r,f1,e,cm_median = self.cross_apply(model,self.array_train,self.target_train)
+
+		return ac,ac_v,p,r,f1,e,cm_median
+
 
 	def mensure(self,k,tests,predicts):
 		ac_v = []
