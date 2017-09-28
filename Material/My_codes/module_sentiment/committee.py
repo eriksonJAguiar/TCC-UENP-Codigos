@@ -5,10 +5,11 @@ from datetime import datetime as dt
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-portuguese')
+	sent = SentClassifiers('dataset-english2')
 
 	results = []
 	acuracias = []
+	logs = []
 
 	nv_acc,nv_ac,nv_p,nv_r,nv_f1,nv_e,_,_ = sent.CMultinomialNV()
 	print('Naive')
@@ -18,6 +19,9 @@ if __name__ == '__main__':
 	print('f1 = %f'%nv_f1)
 	print('e = %f'%nv_e)
 	print('---------------')
+
+	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
+	logs.append(l)
 	
 	dt_acc,dt_ac,dt_p,dt_r,dt_f1,dt_e,_,_ = sent.CDecisionTree()
 	print('Decisao')
@@ -28,6 +32,9 @@ if __name__ == '__main__':
 	print('e = %f'%dt_e)
 	print('---------------')
 
+	l = 'dt',dt_acc,dt_p,dt_r,dt_f1,dt_e,str(dt.now())
+	logs.append(l)
+
 	svm_acc,svm_ac,svm_p,svm_r,svm_f1,svm_e,_,_ = sent.CSuportVectorMachine()
 	print('SVM')
 	print('ac = %f'%svm_acc)
@@ -36,6 +43,9 @@ if __name__ == '__main__':
 	print('f1 = %f'%svm_f1)
 	print('e = %f'%svm_e)
 	print('---------------')
+
+	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
+	logs.append(l)
 
 	#gd_acc,gd_ac,_,_,_,_,_,_ = sent.CGradientDescEst()
 	rf_acc,rf_ac,rf_p,rf_r,rf_f1,rf_e,_,_ = sent.CRandomForest()
@@ -47,6 +57,9 @@ if __name__ == '__main__':
 	print('e = %f'%rf_e)
 	print('---------------')
 
+	l = 'rf',rf_acc,rf_p,rf_r,rf_f1,rf_e,str(dt.now())
+	logs.append(l)
+
 	rl_acc,rl_ac,rl_p,rl_r,rl_f1,rl_e,_,_ = sent.CLogistRegression()
 	print('Logistic')
 	print('ac = %f'%rl_acc)
@@ -55,6 +68,11 @@ if __name__ == '__main__':
 	print('f1 = %f'%rl_f1)
 	print('e = %f'%rl_e)
 	print('---------------')
+
+	l = 'rl',rl_acc,rl_p,rl_r,rl_f1,rl_e,str(dt.now())
+	logs.append(l)
+
+	sent.write_csv(logs,'logs')
 
 	results.append(nv_ac)
 	results.append(svm_ac)
@@ -75,7 +93,7 @@ if __name__ == '__main__':
 	pred,original = sent.committee(k,pesos)
 
 
-	line = []
+	lines = []
 
 	names = ['naive','svm','tree','forest','logistic','cm','cm2']
 
@@ -94,6 +112,9 @@ if __name__ == '__main__':
 	print("Erro %f"%e)
 	print("--------------------------")
 
+	l = ac,p,r,f1,e,str(dt.now())
+	lines.append(l)
+
 	print("Comitê 2")
 	print("Acuracia %f"%ac2)
 	print("Precisao %f"%p2)
@@ -102,10 +123,11 @@ if __name__ == '__main__':
 	print("Erro %f"%e2)
 	print("--------------------------")
 
-	l = ac,p,r,f1,e,str(dt.now())
-	line.append(l)
 
-	sent.write_csv(line,'committee')
+	l = ac2,p2,r2,f12,e2,str(dt.now())
+	lines.append(l)
+
+	sent.write_csv(lines,'committee')
 
 	sent.box_plot(results,names)
 
