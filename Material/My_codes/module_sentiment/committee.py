@@ -5,7 +5,7 @@ from datetime import datetime as dt
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-english2')
+	sent = SentClassifiers('dataset-portuguese')
 
 	results = []
 	acuracias = []
@@ -99,7 +99,7 @@ if __name__ == '__main__':
 
 	ac,cmm_ac,p,r,f1,e,_ = sent.mensure(k,pred,original)
 
-	ac2,cmm_ac2,p2,r2,f12,e2,_ = sent.committee2(k,pesos)
+	ac2,cmm_ac2,p2,r2,f12,e2,_,_ = sent.committee2(k,pesos)
 
 	results.append(cmm_ac)
 	results.append(cmm_ac2)

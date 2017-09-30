@@ -4,7 +4,7 @@ from class_roc import Roc
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-english2')
+	sent = SentClassifiers('dataset-portuguese')
 
 	nv_roc = Roc()
 	svm_roc = Roc()
@@ -100,9 +100,11 @@ if __name__ == '__main__':
 
 	k = 10
 
-	pred,original = sent.committee(k,pesos)
+	#pred,original = sent.committee(k,pesos)
 
-	cm_ac,_,cm_p,cm_r,cm_f1,cm_e,cm_mean = sent.mensure(k,pred,original)
+	pesos = sent.calc_weigth(acuracias)
+
+	cm_ac,_,cm_p,cm_r,cm_f1,cm_e,cm_cm,cm_roc = sent.committee2(k,pesos)
 
 	print('Comitê')
 	print('ac = %f'%cm_ac)
@@ -112,7 +114,7 @@ if __name__ == '__main__':
 	print('e = %f'%cm_e)
 	print('---------------')
 
-	cm_roc = sent.roc(cm_mean)
+	#cm_roc = sent.roc(cm_mean)
 
 	fpr.append(cm_roc.get_fpr())
 	tpr.append(cm_roc.get_tpr())

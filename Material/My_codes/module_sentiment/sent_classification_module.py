@@ -203,36 +203,27 @@ class SentClassifiers():
 		return ac,ac_v,p,r,f1,e,cm_median
 
 	def matrix_confuse_median(self,cm):
-		pos = dict()
+		it = (cm[0]).size
+		n_class = (cm[0][0]).size
 
-		for i in range(1,10):
-			pos[i] = []
+		cm_median = []
 
-		for cf in cm:
-			x = 1
-			for i in range(0,3):
-				for j in range(0,3):
-					pos[x].append(cf[i][j])
-					x += 1
-
-		part1 = []
-		part2 = []
-		part3 = []
-
-		for i in range(1,10):
-			if i <= 3 :
-				part1.append(math.ceil(statistics.median(pos[i])))	
-
-			elif i > 3 and i <= 6:
-				part2.append(math.ceil(statistics.median(pos[i])))
-
-			else:
-				part3.append(math.ceil(statistics.median(pos[i])))
+		for i in range(n_class):
+			cm_median.append([])
 
 
-		m_confuse = np.array([part1,part2,part3])
+		for i in range(it):
+			median = []
+			for j in range(len(cm)):
+				median.append(cm[j].item(i))
+			
 
-		return m_confuse
+			cm_median[int(i/3)].append(int(statistics.median(median)))
+
+
+		array = np.asarray(cm_median)
+
+		return array
 
 	def more_voted(self,votes):
 		rank = [-1,0,1]
@@ -363,7 +354,11 @@ class SentClassifiers():
 
 		ac,ac_v,p,r,f1,e,cm_median = self.cross_apply(model,self.array_train,self.target_train)
 
-		return ac,ac_v,p,r,f1,e,cm_median
+		roc_ = Roc()
+
+		roc_ = self.roc(cm_median)
+
+		return ac,ac_v,p,r,f1,e,cm_median,roc_
 
 
 	def mensure(self,k,tests,predicts):
@@ -430,7 +425,7 @@ class SentClassifiers():
 				tn = cm[i,i]
 				for j in range(n_classes):
 					smn += cm[j,i]
-				e = 1-(tn/smn)
+				e = (tn/smn)
 				esp.append(e)	
 				tpr.append(e)
 
