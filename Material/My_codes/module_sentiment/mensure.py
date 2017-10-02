@@ -4,7 +4,7 @@ from class_roc import Roc
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-portuguese')
+	sent = SentClassifiers('dataset-english2')
 
 	nv_roc = Roc()
 	svm_roc = Roc()
@@ -128,5 +128,5 @@ if __name__ == '__main__':
 
 	#sent.plot_roc(roc.get_fpr(),roc.get_tpr(),roc.get_auc(),'red','nv')
 
-	#sent.plot_confuse_matrix(rl_cm)
+	sent.plot_confuse_matrix(nv_cm)
 	

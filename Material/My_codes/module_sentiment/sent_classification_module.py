@@ -128,8 +128,9 @@ class SentClassifiers():
 		r_v = []
 		f1_v = []
 		e_v = []
-		fpr = []
-		tpr = []
+		fpr_ = []
+		tpr_ = []
+		roc_auc_ = []
 
 
 		for train_index,teste_index in kf.split(X,target):
@@ -143,12 +144,16 @@ class SentClassifiers():
 			f1 = (2*p*r)/(p+r)
 			e = mean_squared_error(y_test, pred)
 			cm = confusion_matrix(y_test,pred)
+			fpr,tpr,roc_auc = self._roc(y_test,pred,[-1,0,1])
 			cm_v.append(cm)
 			ac_v.append(ac)
 			p_v.append(p)
 			r_v.append(r)
 			f1_v.append(f1)
 			e_v.append(e)
+			fpr_.append(fpr)
+			tpr_.append(tpr)
+			roc_auc_.append(roc_auc)
 
 		ac = statistics.median(ac_v)
 		p = statistics.median(p_v)
@@ -156,49 +161,13 @@ class SentClassifiers():
 		r = statistics.median(r_v)
 		e = statistics.median(e_v)
 		cm_median = self.matrix_confuse_median(cm_v)
+		fpr = np.median(fpr_)
+		tpr = np.median(tpr_)
+		roc_auc = statistics.median(roc_auc_)
 
-		return ac,ac_v,p,r,f1,e,cm_median
-
-#	def cross_apply_best2(self,model,train,target,pesos):
-
-		count_vect = CountVectorizer()
-		X = count_vect.fit_transform(train)
-		kf = KFold(10, shuffle=True, random_state=1)
-
-		ac_v = []
-		cm_v = []
-		p_v = []
-		r_v = []
-		f1_v = []
-		e_v = []
-		fpr = []
-		tpr = []
-
-
-		for train_index,teste_index in kf.split(X,target):
-			X_train, X_test = X[train_index],X[teste_index]
-			y_train, y_test = target[train_index], target[teste_index]
-			model.fit(X_train,y_train)
-			pred = model.predict(X_test)	
-			ac = accuracy_score(y_test, pred)
-			p = precision_score(y_test, pred,average='weighted')
-			r = recall_score(y_test, pred,average='weighted')
-			f1 = (2*p*r)/(p+r)
-			e = mean_squared_error(y_test, pred)
-			cm = confusion_matrix(y_test,pred)
-			cm_v.append(cm)
-			ac_v.append(ac)
-			p_v.append(p)
-			r_v.append(r)
-			f1_v.append(f1)
-			e_v.append(e)
-
-		ac = statistics.median(ac_v)
-		p = statistics.median(p_v)
-		f1 = statistics.median(f1_v)
-		r = statistics.median(r_v)
-		e = statistics.median(e_v)
-		cm_median = self.matrix_confuse_median(cm_v)
+		print(fpr)
+		print(tpr)
+		print("roc = %f"%roc_auc)
 
 		return ac,ac_v,p,r,f1,e,cm_median
 
@@ -321,7 +290,6 @@ class SentClassifiers():
 
 		return pred_more_voted, original_label
 
-
 	def committee(self,k,pesos):
 		models = dict()
 		models['model'] = []
@@ -360,7 +328,6 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm_median,roc_
 
-
 	def mensure(self,k,tests,predicts):
 		ac_v = []
 		cm_v = []
@@ -394,6 +361,38 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm_median
 
+	def _roc(self,y_true,y_pred,y_class):
+		n = len(y_class)
+
+		#it = (math.factorial(n)/math.factorial(n-1))
+
+		fpr_ = []
+		tpr_ = []
+		roc_auc_ = []
+
+		labels = dict()
+
+		for i in range(n):
+			labels[y_class[i]] = []
+
+		for i in range(n):
+			if 
+			  labels[y_class[i]].append()
+
+		for i in range(n):
+			fpr,tpr,_ = roc_curve(y_true,y_pred,pos_label=y_class[i])
+			fpr_.append(fpr)
+			tpr_.append(tpr)
+
+		fpr_,tpr_ = np.array(fpr_),np.array(tpr_)
+		fpr, tpr = np.reshape(fpr_, -1, order='F'),np.reshape(tpr_, -1, order='F')
+		fpr, tpr = np.sort(fpr),np.sort(tpr)
+		
+		roc_auc = auc(fpr,tpr)
+
+		return fpr,tpr,roc_auc
+
+
 	def roc(self,cm):
 
 		n_classes = 3
@@ -425,7 +424,7 @@ class SentClassifiers():
 				tn = cm[i,i]
 				for j in range(n_classes):
 					smn += cm[j,i]
-				e = (tn/smn)
+				e = 1-(tn/smn)
 				esp.append(e)	
 				tpr.append(e)
 
