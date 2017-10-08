@@ -22,6 +22,18 @@ if __name__ == '__main__':
 
 	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
 	logs.append(l)
+
+	svm_acc,svm_ac,svm_p,svm_r,svm_f1,svm_e,_,_ = sent.CSuportVectorMachine()
+	print('SVM')
+	print('ac = %f'%svm_acc)
+	print('p = %f'%svm_p)
+	print('r = %f'%svm_r)
+	print('f1 = %f'%svm_f1)
+	print('e = %f'%svm_e)
+	print('---------------')
+
+	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
+	logs.append(l)
 	
 	dt_acc,dt_ac,dt_p,dt_r,dt_f1,dt_e,_,_ = sent.CDecisionTree()
 	print('Decisao')
@@ -35,19 +47,6 @@ if __name__ == '__main__':
 	l = 'dt',dt_acc,dt_p,dt_r,dt_f1,dt_e,str(dt.now())
 	logs.append(l)
 
-	svm_acc,svm_ac,svm_p,svm_r,svm_f1,svm_e,_,_ = sent.CSuportVectorMachine()
-	print('SVM')
-	print('ac = %f'%svm_acc)
-	print('p = %f'%svm_p)
-	print('r = %f'%svm_r)
-	print('f1 = %f'%svm_f1)
-	print('e = %f'%svm_e)
-	print('---------------')
-
-	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
-	logs.append(l)
-
-	#gd_acc,gd_ac,_,_,_,_,_,_ = sent.CGradientDescEst()
 	rf_acc,rf_ac,rf_p,rf_r,rf_f1,rf_e,_,_ = sent.CRandomForest()
 	print('Forest')
 	print('ac = %f'%rf_acc)
@@ -90,46 +89,29 @@ if __name__ == '__main__':
 
 	k = 10
 
-	pred,original = sent.committee(k,pesos)
-
 
 	lines = []
 
-	names = ['naive','svm','tree','forest','logistic','cm','cm2']
+	names = ['naive','svm','tree','forest','logistic','cm']
 
-	ac,cmm_ac,p,r,f1,e,_ = sent.mensure(k,pred,original)
-
-	ac2,cmm_ac2,p2,r2,f12,e2,_,_ = sent.committee2(k,pesos)
+	ac,cmm_ac,p,r,f1,e,_,_ = sent.committee(k,pesos)
 
 	results.append(cmm_ac)
-	results.append(cmm_ac2)
 
 	print("Comitê")
 	print("Acuracia %f"%ac)
 	print("Precisao %f"%p)
 	print("Recall %f"%r)
-	print("F1 Score %f"%p)
+	print("F1 Score %f"%f1)
 	print("Erro %f"%e)
 	print("--------------------------")
 
-	l = ac,p,r,f1,e,str(dt.now())
-	lines.append(l)
-
-	print("Comitê 2")
-	print("Acuracia %f"%ac2)
-	print("Precisao %f"%p2)
-	print("Recall %f"%r2)
-	print("F1 Score %f"%p2)
-	print("Erro %f"%e2)
-	print("--------------------------")
-
-
-	l = ac2,p2,r2,f12,e2,str(dt.now())
+	l = 'cm',ac,p,r,f1,e,str(dt.now())
 	lines.append(l)
 
 	sent.write_csv(lines,'committee')
 
-	sent.box_plot(results,names)
+	sent.box_plot(results,names,'comparação entre algoritmos')
 
 
 	

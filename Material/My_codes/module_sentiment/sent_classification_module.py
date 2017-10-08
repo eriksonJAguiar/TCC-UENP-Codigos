@@ -7,6 +7,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn import svm
+from sklearn.model_selection import GridSearchCV
 
 #Metricas
 from sklearn.metrics import accuracy_score
@@ -113,7 +114,7 @@ class SentClassifiers():
 
 		self.target_train = self.train_df['opiniao'].values
 
-		self.acc_vet = []
+		self.classifiers = []
 
 
 	def cross_apply(self,model,train,target):
@@ -144,16 +145,13 @@ class SentClassifiers():
 			f1 = (2*p*r)/(p+r)
 			e = mean_squared_error(y_test, pred)
 			cm = confusion_matrix(y_test,pred)
-			fpr,tpr,roc_auc = self._roc(y_test,pred,[-1,0,1])
 			cm_v.append(cm)
 			ac_v.append(ac)
 			p_v.append(p)
 			r_v.append(r)
 			f1_v.append(f1)
 			e_v.append(e)
-			fpr_.append(fpr)
-			tpr_.append(tpr)
-			roc_auc_.append(roc_auc)
+
 
 		ac = statistics.median(ac_v)
 		p = statistics.median(p_v)
@@ -161,13 +159,7 @@ class SentClassifiers():
 		r = statistics.median(r_v)
 		e = statistics.median(e_v)
 		cm_median = self.matrix_confuse_median(cm_v)
-		fpr = np.median(fpr_)
-		tpr = np.median(tpr_)
-		roc_auc = statistics.median(roc_auc_)
 
-		print(fpr)
-		print(tpr)
-		print("roc = %f"%roc_auc)
 
 		return ac,ac_v,p,r,f1,e,cm_median
 
@@ -194,31 +186,7 @@ class SentClassifiers():
 
 		return array
 
-	def more_voted(self,votes):
-		rank = [-1,0,1]
-		aux = votes[0]
-		pos = 0
-		for i in range(len(votes)-1):
-			if votes[i+1] > votes[i]:
-				aux = votes[i+1]
-				pos = i+1 
 
-		return rank[pos],aux
-
-	def votation(self,votes_i,weight):
-		votes = []
-		for i in range(-1,2):
-			#v = votes_i.count(i)
-			v = 0
-			for j in range(len(votes_i)):
-				if votes_i[j] == i:
-					v += weight[j]
-
-			votes.append(v)
-
-		return votes
-
-	def percorre_pred(self,tab_pred,md):
 		tab_aux = []
 		for i in range(len(tab_pred[md[0]][0])):
 			values = []
@@ -240,93 +208,11 @@ class SentClassifiers():
 
 		return tab	
 
-	def cross_apply_best(self,k,models,train,target):
-
-		count_vect = CountVectorizer()
-		X = count_vect.fit_transform(train)
-		kf = KFold(k, shuffle=True, random_state=1)
-		k_esimo = 1
-
-		m = ['nv','svm','dt','rf','rl']
-
-		pred_more_voted = dict()
-		original_label = dict()
-
-		for train_index,teste_index in kf.split(X,target):
-			tab_pred = dict()
-			tab_pred_aux = dict()
-		
-			tab_pred['nv'] = []
-			tab_pred['svm'] = []
-			tab_pred['dt'] = []
-			tab_pred['rf'] = []
-			tab_pred['rl'] = []
-
-			tab_pred_aux = tab_pred
-
-			for i in range(len(models['model'])):
-				X_train, X_test = X[train_index],X[teste_index]
-				y_train, y_test = target[train_index], target[teste_index]
-				models['model'][i].fit(X_train,y_train)
-				pred = models['model'][i].predict(X_test)
-				tab_pred[m[i]].append(pred)
-
-			tab_pred_aux = self.percorre_pred(tab_pred,m)
-			more_voted = []
-
-			for j in range(len(tab_pred_aux[m[0]])):
-				vts = []
-				for md in m:
-					vts.append(tab_pred_aux[md][j]) 
-					
-				votes = self.votation(vts,models['peso'])
-				best,_ = self.more_voted(votes)
-				more_voted.append(best)
-
-
-			pred_more_voted[str(k_esimo)] = more_voted
-			original_label[str(k_esimo)] = y_test.tolist()
-			k_esimo += 1
-
-		return pred_more_voted, original_label
-
-	def committee(self,k,pesos):
-		models = dict()
-		models['model'] = []
-		models['peso'] = pesos
-		nv = MultinomialNB(alpha=0.000001)
-		models['model'].append(nv)
-		dt = tree.DecisionTreeClassifier(criterion='gini')
-		models['model'].append(dt)
-		csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
-		models['model'].append(csvm)
-		rf = RandomForestClassifier()
-		models['model'].append(rf)
-		lr = LogisticRegression(penalty='l2',multi_class='ovr')
-		models['model'].append(lr)
-
-		pred,original = self.cross_apply_best(k,models,self.array_train,self.target_train)
-
-		return pred,original
 	
-	def committee2(self,k,pesos):
-		#'naive','svm','tree','forest','logistic'
-		nv = MultinomialNB(alpha=0.000001)
-		dt = tree.DecisionTreeClassifier(criterion='gini')
-		csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
-		rf = RandomForestClassifier()
-		lr = LogisticRegression(penalty='l2',multi_class='ovr')
-
-		model = VotingClassifier(estimators=[('nv', nv), ('svm',csvm), ('dt',dt) ,('rf', rf), ('lr',lr)], weights=pesos,voting='hard')
-
-
-		ac,ac_v,p,r,f1,e,cm_median = self.cross_apply(model,self.array_train,self.target_train)
-
-		roc_ = Roc()
-
-		roc_ = self.roc(cm_median)
-
-		return ac,ac_v,p,r,f1,e,cm_median,roc_
+	
+	
+	
+	
 
 	def mensure(self,k,tests,predicts):
 		ac_v = []
@@ -375,9 +261,9 @@ class SentClassifiers():
 		for i in range(n):
 			labels[y_class[i]] = []
 
-		for i in range(n):
-			if 
-			  labels[y_class[i]].append()
+		#for i in range(n):
+		#	if 
+		#	  labels[y_class[i]].append()
 
 		for i in range(n):
 			fpr,tpr,_ = roc_curve(y_true,y_pred,pos_label=y_class[i])
@@ -512,10 +398,10 @@ class SentClassifiers():
 		plt.ylabel('Verdadeiro')
 		plt.show()
 
-	def box_plot(self,results,names):
+	def box_plot(self,results,names,title):
 
 		fig = plt.figure()
-		fig.suptitle('Algorithm Comparison')
+		fig.suptitle(title)
 		ax = fig.add_subplot(111)
 		plt.boxplot(results)
 		ax.set_xticklabels(names)
@@ -523,10 +409,15 @@ class SentClassifiers():
 
 	def CMultinomialNV(self,alpha = 0.000001):
 
-		nb = MultinomialNB(alpha)
-		#nb = BernoulliNB(alpha,binarize=0.8)
+		parameters = {'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'fit_prior':[True,False]}
+		
+		grid_nb = GridSearchCV(MultinomialNB(),parameters)
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(nb,self.array_train,self.target_train)
+		self.classifiers.append(grid_nb)
+		
+		#nb = MultinomialNB(alpha)
+
+		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_nb,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 		log = 'nv',ac,p,r,f1,e,str(datetime.now())
@@ -535,9 +426,15 @@ class SentClassifiers():
 
 	def CDecisionTree(self,criterion='gini'):
 
-		dt = tree.DecisionTreeClassifier(criterion)
+		parameters = {'criterion':('gini','entropy'),'splitter':('best','random')}
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(dt,self.array_train,self.target_train)
+		grid_dt = GridSearchCV(tree.DecisionTreeClassifier(),parameters)
+
+		self.classifiers.append(grid_dt)
+		
+		#dt = tree.DecisionTreeClassifier(criterion)
+
+		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_dt,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 
@@ -547,11 +444,20 @@ class SentClassifiers():
 
 	def CSuportVectorMachine(self,kernel='linear',gamma='auto',C=100,decision_function_shape='ovr'):
 
-		csvm = svm.SVC(kernel=kernel,gamma=gamma,C=C,decision_function_shape=decision_function_shape)
+		#parameters = {'kernel':('linear', 'rbf'), 'C':[10, 100]}
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(csvm,self.array_train,self.target_train)
+		parameters = {'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr']}
+		
+		grid_svm = GridSearchCV(svm.SVC(),parameters)
+
+		self.classifiers.append(grid_svm)
+		
+		#csvm = svm.SVC(kernel=kernel,gamma=gamma,C=C,decision_function_shape=decision_function_shape)
+
+		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_svm,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
+		
 		log = 'svm',ac,p,r,f1,e,str(datetime.now())
 
 
@@ -559,9 +465,15 @@ class SentClassifiers():
 
 	def CRandomForest(self):
 		
-		rf = RandomForestClassifier()
+		parameters = {'n_estimators':[1,5,10,20,30],'criterion':('gini','entropy')}
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(rf,self.array_train,self.target_train)
+		grid_rf = GridSearchCV(RandomForestClassifier(),parameters)
+
+		self.classifiers.append(grid_rf)
+
+		#rf = RandomForestClassifier()
+
+		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_rf,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 
@@ -571,15 +483,42 @@ class SentClassifiers():
 
 	def CLogistRegression(self,penalty="l2",multi_class="ovr"):
 
-		lr = LogisticRegression(penalty=penalty,multi_class=multi_class)
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(lr,self.array_train,self.target_train)
+		parameters = {'penalty':['l2'],'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['newton-cg','lbfgs','sag'],'multi_class':['ovr','multinomial']}
+		#newton-cg’, ‘sag’, ‘saga’ and ‘lbfgs’
+		#'penalty':('l1'),'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['lbfgs', 'liblinear', 'sag', 'saga']
+		
+		grid_lr = GridSearchCV(LogisticRegression(),parameters)
+
+		self.classifiers.append(grid_lr)
+
+		#lr = LogisticRegression(penalty=penalty,multi_class=multi_class)
+
+		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_lr,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 
 		log = 'rl',ac,p,r,f1,e,str(datetime.now())
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
+	
+	def committee(self,k,pesos):
+    	#'naive','svm','tree','forest','logistic'
+		#nv = MultinomialNB(alpha=0.000001)
+		#dt = tree.DecisionTreeClassifier(criterion='gini')
+		#csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
+		#rf = RandomForestClassifier()
+		#lr = LogisticRegression(penalty='l2',multi_class='ovr')
 
+		model = VotingClassifier(estimators=[('nv', self.classifiers[0]), ('svm',self.classifiers[1]), ('dt',self.classifiers[2]) ,('rf', self.classifiers[3]), ('lr',self.classifiers[4])], weights=pesos,voting='hard')
+
+
+		ac,ac_v,p,r,f1,e,cm_median = self.cross_apply(model,self.array_train,self.target_train)
+
+		roc_ = Roc()
+
+		roc_ = self.roc(cm_median)
+
+		return ac,ac_v,p,r,f1,e,cm_median,roc_
 	def committee_prob(self,text):
 
 		count_vect = CountVectorizer()
