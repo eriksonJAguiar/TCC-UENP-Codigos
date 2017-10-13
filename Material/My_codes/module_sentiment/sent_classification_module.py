@@ -67,7 +67,7 @@ class SentClassifiers():
 
 	def convert_df(self,df):
 		new_df = []
-		for d in df['opiniao']:
+		for d in df:
 			if d == 'Positivo' or d =='Positive':
 				new_df.append(1)
 			
@@ -76,13 +76,12 @@ class SentClassifiers():
 			
 			elif d == 'Negativo' or d == 'Negative':
 				new_df.append(-1)
-
-		
+	
 		return new_df
 
 	def clean(self,dataframe):
 		new_df = []
-		for df in dataframe['tweet']:
+		for df in dataframe:
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
 			#expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
@@ -90,6 +89,7 @@ class SentClassifiers():
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
+			
 			new_df.append(frase)
 
 		return new_df
@@ -97,13 +97,17 @@ class SentClassifiers():
 	def initial(self,file):
 		dataframe = self.read_csv(file)
 
-		dataframe['opiniao'] = self.convert_df(dataframe)
+		dataframe = dataframe.dropna()
 
-		dataframe['tweet'] = self.clean(dataframe)
+		new_df = pd.DataFrame()
 
-		dataframe = dataframe.reset_index()
+		new_df['opiniao'] = self.convert_df(dataframe['opiniao'])
 
-		return dataframe
+		new_df['tweet'] = self.clean(dataframe['tweet'])
+
+		new_df = new_df.reset_index()
+
+		return new_df
 
 	#construtor
 	def __init__(self,file):
@@ -129,10 +133,9 @@ class SentClassifiers():
 		r_v = []
 		f1_v = []
 		e_v = []
-		fpr_ = []
-		tpr_ = []
+		fpr = []
+		tpr = []
 		roc_auc_ = []
-
 
 		for train_index,teste_index in kf.split(X,target):
 			X_train, X_test = X[train_index],X[teste_index]
@@ -145,12 +148,17 @@ class SentClassifiers():
 			f1 = (2*p*r)/(p+r)
 			e = mean_squared_error(y_test, pred)
 			cm = confusion_matrix(y_test,pred)
+			#fpr_,tpr_,auc_ = self._roc(y_test,pred,[-1,0,1])
+			#self.plot_roc(fpr_,tpr_,auc_,'red','nv')
 			cm_v.append(cm)
 			ac_v.append(ac)
 			p_v.append(p)
 			r_v.append(r)
 			f1_v.append(f1)
 			e_v.append(e)
+			#fpr.append(fpr_)
+			#tpr.append(tpr_)
+			#roc_auc_.append(auc_)
 
 
 		ac = statistics.median(ac_v)
@@ -159,7 +167,12 @@ class SentClassifiers():
 		r = statistics.median(r_v)
 		e = statistics.median(e_v)
 		cm_median = self.matrix_confuse_median(cm_v)
+		#fpr,tpr = np.array(fpr),np.array(tpr)
+		#fpr,tpr = np.reshape(fpr_, -1, order='F'),np.reshape(tpr_, -1, order='F')
+		#fpr, tpr = np.sort(fpr),np.sort(tpr)
+		#roc_auc = statistics.median(roc_auc_)
 
+		#self.plot_roc(fpr,tpr,roc_auc,'red','nv')
 
 		return ac,ac_v,p,r,f1,e,cm_median
 
@@ -207,11 +220,6 @@ class SentClassifiers():
 				j += 1
 
 		return tab	
-
-	
-	
-	
-	
 	
 
 	def mensure(self,k,tests,predicts):
@@ -250,23 +258,13 @@ class SentClassifiers():
 	def _roc(self,y_true,y_pred,y_class):
 		n = len(y_class)
 
-		#it = (math.factorial(n)/math.factorial(n-1))
-
 		fpr_ = []
 		tpr_ = []
 		roc_auc_ = []
 
-		labels = dict()
-
-		for i in range(n):
-			labels[y_class[i]] = []
-
-		#for i in range(n):
-		#	if 
-		#	  labels[y_class[i]].append()
-
 		for i in range(n):
 			fpr,tpr,_ = roc_curve(y_true,y_pred,pos_label=y_class[i])
+			roc_auc_.append(auc(fpr,tpr))
 			fpr_.append(fpr)
 			tpr_.append(tpr)
 
@@ -274,10 +272,9 @@ class SentClassifiers():
 		fpr, tpr = np.reshape(fpr_, -1, order='F'),np.reshape(tpr_, -1, order='F')
 		fpr, tpr = np.sort(fpr),np.sort(tpr)
 		
-		roc_auc = auc(fpr,tpr)
+		roc_auc = statistics.median(roc_auc_)
 
 		return fpr,tpr,roc_auc
-
 
 	def roc(self,cm):
 
@@ -414,7 +411,7 @@ class SentClassifiers():
 		grid_nb = GridSearchCV(MultinomialNB(),parameters)
 
 		self.classifiers.append(grid_nb)
-		
+
 		#nb = MultinomialNB(alpha)
 
 		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_nb,self.array_train,self.target_train)
@@ -519,6 +516,7 @@ class SentClassifiers():
 		roc_ = self.roc(cm_median)
 
 		return ac,ac_v,p,r,f1,e,cm_median,roc_
+	
 	def committee_prob(self,text):
 
 		count_vect = CountVectorizer()

@@ -4,7 +4,7 @@ from class_roc import Roc
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-english2')
+	sent = SentClassifiers('dataset-english-senders')
 
 	nv_roc = Roc()
 	svm_roc = Roc()
@@ -33,6 +33,8 @@ if __name__ == '__main__':
 	fpr.append(nv_roc.get_fpr())
 	tpr.append(nv_roc.get_tpr())
 	auc.append(nv_roc.get_auc())
+
+	#sent.plot_confuse_matrix(nv_cm)
 
 	svm_ac,_,svm_p,svm_r,svm_f1,svm_e,svm_cm,svm_roc = sent.CSuportVectorMachine()
 
@@ -104,7 +106,7 @@ if __name__ == '__main__':
 
 	pesos = sent.calc_weigth(acuracias)
 
-	cm_ac,_,cm_p,cm_r,cm_f1,cm_e,cm_cm,cm_roc = sent.committee2(k,pesos)
+	cm_ac,_,cm_p,cm_r,cm_f1,cm_e,cm_median,cm_roc = sent.committee(k,pesos)
 
 	print('Comitê')
 	print('ac = %f'%cm_ac)
@@ -128,5 +130,5 @@ if __name__ == '__main__':
 
 	#sent.plot_roc(roc.get_fpr(),roc.get_tpr(),roc.get_auc(),'red','nv')
 
-	sent.plot_confuse_matrix(nv_cm)
+	#sent.plot_confuse_matrix(nv_cm)
 	

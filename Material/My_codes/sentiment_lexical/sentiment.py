@@ -4,9 +4,11 @@ import numpy as np
 import nltk
 import re
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import cross_val_predict, KFold,GroupKFold
+from sklearn.metrics import confusion_matrix
 from gensim.models import word2vec as w2v
 from gensim.models.word2vec import LineSentence
-from gensim.models import Doc2Vec
+import statistics
 
 def read_file_txt(file):
 	text_file = open("%s.txt"%file, "r",encoding='utf-8')
@@ -72,19 +74,19 @@ def sent_frase(frase_tokens):
 			#neg.append(s)
 
 		#pos.sort()
-		print(f)
-		#try:
-		pos = model_pos.similar_by_vector(f, topn=10, restrict_vocab=None)
-		neg = model_neg.similar_by_vector(f, topn=10, restrict_vocab=None)
+		try:
+			pos = model_pos.similar_by_vector(f, topn=10, restrict_vocab=None)
+			neg = model_neg.similar_by_vector(f, topn=10, restrict_vocab=None)
 
-		if pos[0] > neg[0]:
+			if pos[0] > neg[0]:
 				frase_sent.append(1)
 
-		else:
-			frase_sent.append(-1)
+			else:
+				frase_sent.append(-1)
 
-		#except Exception:
-			#frase_sent.append(0)
+		except Exception:
+			frase_sent.append(0)
+			continue
 			
 
 		
@@ -94,16 +96,29 @@ def calc_sent(frase_sent):
 	p = frase_sent.count(1)
 	n = frase_sent.count(-1)
 
+	if p + n == 0:
+		return 0
+
 	np = (p/(p+n))
 	nn = (n/(p+n))
 
 	return int(nn-np)
 
-def mensure(y_true,y_pred):
+def convert_df(df):
+	new_df = []
+	for d in df:
+		if d == 'Positivo' or d =='Positive':
+			new_df.append(1)
+			
+		elif d == 'Neutro' or d =='Neutral':
+			new_df.append(0)
+			
+		elif d == 'Negativo' or d == 'Negative':
+			new_df.append(-1)
+	
+	return new_df
 
-	ac = accuracy_score(y_true,y_pred)
 
-	return ac
 
 def init():
 	words_neg = read_file_txt("dataset/Negativo")
@@ -112,34 +127,62 @@ def init():
 	words_pos = read_file_txt("dataset/Positivo")
 	write_file_txt("dataset/Positivo_",words_pos)
 
+def sent_mensure(dataset):
+
+	sent = []
+	for f in dataset:
+		frase = clean(f)
+		frase_sent = sent_frase(frase)
+		s = calc_sent(frase_sent)
+		sent.append(s)
+
+	return sent
+
+def mensure():
+
+	X = read_csv("dataset-portuguese")
+	X['opiniao'] = convert_df(X['opiniao'])
+	X_text = X['tweet']
+	target = np.array(X['opiniao'])
+
+	kf = KFold(10, shuffle=True, random_state=1)
+
+	ac_scores = []
+
+	for train_index,teste_index in kf.split(X_text,target):
+		X_test = X_text[teste_index]
+		y_test = target[teste_index]
+
+		#print(len(X_test))
+		#print(len(y_test))
+		
+		y_pred = sent_mensure(X_test)
+
+		ac = accuracy_score(y_test,y_pred)
+
+		ac_scores.append(ac)
+
+
+	write_csv(ac_scores,'acuracias-pt-lexical')
+
+	ac = statistics.median(ac_scores)
+
+	return ac	
+
+def write_csv(data,file):
+	df = pd.DataFrame(data)
+	#df = df.set_index(['opiniao', 'tweet'])
+	df.to_csv('../files_extern/%s.csv'%(file), mode='a', sep=';',index=False, header=False)
+
+
 if __name__ == '__main__':
 
-	#train  = read_csv("dataset-portuguese")
-	#y_true = np.array(train['opiniao'])
-	#words_pos = write_file("dataset/Positivo")
 
-	#init()
+	ac = mensure()
 
-	s = "Jogar Futebol"
+	print('ac = %f'%ac)
+	
 
-	s = clean(s)
+	
 
-	f_sent = sent_frase(s)
-	#sent = calc_sent(f_sent)
-	print(f_sent)
-	#print(sent)
-
-	#sent = []
-	#for f in train['tweet']:
-	#	frase = clean(f)
-	#	frase_sent = sent_frase(words_neg,words_pos,frase)
-	#	s = calc_sent(frase_sent)
-	#	sent.append(s)
-
-
-	#y_pred = np.array(sent)
-
-	#ac = mensure(y_true,y_pred)
-
-	#print("ac = "%ac)
 

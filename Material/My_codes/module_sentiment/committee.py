@@ -20,6 +20,7 @@ if __name__ == '__main__':
 	print('e = %f'%nv_e)
 	print('---------------')
 
+
 	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
 	logs.append(l)
 
@@ -92,7 +93,7 @@ if __name__ == '__main__':
 
 	lines = []
 
-	names = ['naive','svm','tree','forest','logistic','cm']
+	names = ['naive','svm','tree','forest','logistic','committee','TSviz']
 
 	ac,cmm_ac,p,r,f1,e,_,_ = sent.committee(k,pesos)
 
@@ -108,6 +109,10 @@ if __name__ == '__main__':
 
 	l = 'cm',ac,p,r,f1,e,str(dt.now())
 	lines.append(l)
+
+	df_ac = sent.read_csv('acuracias-pt-lexical')
+
+	results.append(df_ac['acuracia'])
 
 	sent.write_csv(lines,'committee')
 
