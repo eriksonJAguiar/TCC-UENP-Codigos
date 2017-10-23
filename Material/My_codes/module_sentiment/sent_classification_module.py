@@ -79,7 +79,7 @@ class SentClassifiers():
 	
 		return new_df
 
-	def clean(self,dataframe):
+	def clear(self,dataframe):
 		new_df = []
 		for df in dataframe:
 			expr = re.sub(r"http\S+", "", df)
@@ -94,6 +94,7 @@ class SentClassifiers():
 
 		return new_df
 
+
 	def initial(self,file):
 		dataframe = self.read_csv(file)
 
@@ -103,7 +104,7 @@ class SentClassifiers():
 
 		new_df['opiniao'] = self.convert_df(dataframe['opiniao'])
 
-		new_df['tweet'] = self.clean(dataframe['tweet'])
+		new_df['tweet'] = self.clear(dataframe['tweet'])
 
 		new_df = new_df.reset_index()
 
@@ -522,7 +523,7 @@ class SentClassifiers():
 		count_vect = CountVectorizer()
 		df = pd.DataFrame(columns=['tweet','index'])
 		df['tweet'] = [text]
-		df['tweet'] = self.clean(df)
+		df['tweet'] = self.clear(df)
 		test = df['tweet'].values
 		X = count_vect.fit_transform(self.array_train)
 		test = count_vect.transform(test)
