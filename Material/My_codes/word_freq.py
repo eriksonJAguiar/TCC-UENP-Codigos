@@ -99,7 +99,7 @@ if __name__ == '__main__':
     #print('------------------------')
     #print(pos_freq.most_common(30))
 
-    tupla = zip(neg_freq.most_common(50),neu_freq.most_common(50),pos_freq.most_common(50))
+    tupla = zip(neg_freq.most_common(len(neg)),neu_freq.most_common(len(neu)),pos_freq.most_common(len(pos)))
 
     df_neg = pd.DataFrame()
     df_neu = pd.DataFrame()
@@ -130,7 +130,7 @@ if __name__ == '__main__':
 
     vet_neg, vet_neu,vet_pos = exlusivos(vet_neg,vet_neu,vet_pos)
 
-    tupla = zip(vet_neg,vet_neu,vet_pos)
+    tupla = zip(vet_neg[:50],vet_neu[:50],vet_pos[:50])
 
     for (ng,nu,ps) in tupla:
     	words_neg['pt'].append(ng)
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     df_pos['en'] = words_pos['en']
     df_pos['es'] = words_pos['es']
 
-    write_csv(df_neg,'freq_neg2')
-    write_csv(df_neu,'freq_neu2')
-    write_csv(df_pos,'freq_pos2')
+    write_csv(df_neg,'freq_neg3')
+    write_csv(df_neu,'freq_neu3')
+    write_csv(df_pos,'freq_pos3')
 

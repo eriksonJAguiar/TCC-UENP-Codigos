@@ -121,6 +121,89 @@ class SentClassifiers():
 
 		self.classifiers = []
 
+	def find_tweet(self):
+		pos = self.read_csv('freq_pos3')['pt'].values
+		neu = self.read_csv('freq_neu3')['pt'].values
+		neg = self.read_csv('freq_neg3')['pt'].values
+
+
+		df = pd.DataFrame()
+
+		#self.array_train,self.target_train
+
+		tupla = zip(neg,neu,pos)
+		X = []
+		y = []
+
+		tweets = self.array_train
+
+		for (ng,n,p) in tupla:
+			for index in range(len(tweets)):
+				text = self.array_train[index]
+				target = self.target_train[index]
+				
+				if not(text.find(ng) == -1):
+					X.append(text)
+					y.append(target)
+					#print('Text: %s, targ: %s'%(text,target))
+				
+				if not(text.find(n) == -1):
+					X.append(text)
+					y.append(target)
+					#print('Text: %s, targ: %s'%(text,target))
+				
+				if not(text.find(p) == -1):
+					X.append(text)
+					y.append(target)
+					#print('Text: %s, targ: %s'%(text,target))
+
+		return X,y
+
+
+		
+	def validation_words(self,model,train,target):
+		
+		X_mod,y_mod = self.find_tweet()
+
+		count_vect = CountVectorizer()
+		X_train = count_vect.fit_transform(train)
+		X_mod = count_vect.transform(X_mod)
+		
+
+		ac_v = []
+		cm_v = []
+		p_v = []
+		r_v = []
+		f1_v = []
+		e_v = []
+		fpr = []
+		tpr = []
+		roc_auc_ = []
+
+		for i in range(5):
+			model.fit(X_mod,y_mod)
+			pred = model.predict(X_train)
+			ac = accuracy_score(target, pred)
+			p = precision_score(target, pred,average='weighted')
+			r = recall_score(target, pred,average='weighted')
+			f1 = (2*p*r)/(p+r)
+			e = mean_squared_error(target, pred)
+			cm = confusion_matrix(target,pred)
+			cm_v.append(cm)
+			ac_v.append(ac)
+			p_v.append(p)
+			r_v.append(r)
+			f1_v.append(f1)
+			e_v.append(e)
+
+		ac = statistics.median(ac_v)
+		p = statistics.median(p_v)
+		f1 = statistics.median(f1_v)
+		r = statistics.median(r_v)
+		e = statistics.median(e_v)
+		cm_median = self.matrix_confuse_median(cm_v)
+
+		return ac,ac_v,p,r,f1,e,cm_median
 
 	def cross_apply(self,model,train,target):
 
@@ -414,8 +497,8 @@ class SentClassifiers():
 		self.classifiers.append(grid_nb)
 
 		#nb = MultinomialNB(alpha)
-
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_nb,self.array_train,self.target_train)
+		ac,ac_v,p,r,f1,e,cm = self.validation_words(grid_nb,self.array_train,self.target_train)
+		#ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_nb,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 		log = 'nv',ac,p,r,f1,e,str(datetime.now())
@@ -517,57 +600,6 @@ class SentClassifiers():
 		roc_ = self.roc(cm_median)
 
 		return ac,ac_v,p,r,f1,e,cm_median,roc_
-	
-	def committee_prob(self,text):
-
-		count_vect = CountVectorizer()
-		df = pd.DataFrame(columns=['tweet','index'])
-		df['tweet'] = [text]
-		df['tweet'] = self.clear(df)
-		test = df['tweet'].values
-		X = count_vect.fit_transform(self.array_train)
-		test = count_vect.transform(test)
-		
-
-		ac_nv,_,_,_,_,_,_,_ = self.CMultinomialNV()
-		ac_dt,_,_,_,_,_,_,_ = self.CDecisionTree()
-		ac_svm,_,_,_,_,_,_,_ = self.CSuportVectorMachine()
-		ac_rf,_,_,_,_,_,_,_ = self.CRandomForest()
-		ac_rl,_,_,_,_,_,_,_ = self.CLogistRegression()
-
-		acc = []
-
-		acc.append(ac_nv)
-		acc.append(ac_svm)
-		acc.append(ac_dt)
-		acc.append(ac_rf)
-		acc.append(ac_rl)
-
-		pesos = self.calc_weigth(acc)
-
-
-		models = []
-		nv = MultinomialNB(alpha=0.000001)
-		models.append(nv)
-		dt = tree.DecisionTreeClassifier(criterion='gini')
-		models.append(dt)
-		csvm = svm.SVC(kernel='linear',gamma=0.001,C=100,decision_function_shape='ovr')
-		models.append(csvm)
-		rf = RandomForestClassifier()
-		models.append(rf)
-		lr = LogisticRegression(penalty='l2',multi_class='ovr')
-		models.append(lr)
-
-		pred = []
-		for model in models:
-			model.fit(X,self.target_train)
-			p = model.predict(test)
-			pred.append(np.asscalar(p))
-
-		votes = self.votation(pred,pesos)
-		target,prob = self.more_voted(votes)
-
-		return target, prob
 
 
 
