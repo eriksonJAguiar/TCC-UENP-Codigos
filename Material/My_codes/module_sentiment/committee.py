@@ -3,6 +3,7 @@ from class_roc import Roc
 import collections
 from datetime import datetime as dt
 
+
 if __name__ == '__main__':
 
 	sent = SentClassifiers('dataset-portuguese')
@@ -10,8 +11,18 @@ if __name__ == '__main__':
 	results = []
 	acuracias = []
 	logs = []
+	nv_roc = Roc()
+	svm_roc = Roc()
+	dt_roc = Roc()
+	rf_roc = Roc()
+	gd_roc = Roc()
+	rl_roc = Roc()
+	cm_roc = Roc()
+	fpr = []
+	tpr = []
+	auc = []
 
-	nv_acc,nv_ac,nv_p,nv_r,nv_f1,nv_e,_,_ = sent.CMultinomialNV()
+	nv_acc,nv_ac,nv_p,nv_r,nv_f1,nv_e,nv_cm,nv_roc = sent.CMultinomialNV()
 	print('Naive')
 	print('ac = %f'%nv_acc)
 	print('p = %f'%nv_p)
@@ -20,11 +31,15 @@ if __name__ == '__main__':
 	print('e = %f'%nv_e)
 	print('---------------')
 
+	sent.plot_confuse_matrix(nv_cm,'Matriz de Confusao - Naive Bayes','matriz-nv')
+	fpr.append(nv_roc.get_fpr())
+	tpr.append(nv_roc.get_tpr())
+	auc.append(nv_roc.get_auc())
 
 	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
 	logs.append(l)
 
-	svm_acc,svm_ac,svm_p,svm_r,svm_f1,svm_e,_,_ = sent.CSuportVectorMachine()
+	svm_acc,svm_ac,svm_p,svm_r,svm_f1,svm_e,svm_cm,svm_roc = sent.CSuportVectorMachine()
 	print('SVM')
 	print('ac = %f'%svm_acc)
 	print('p = %f'%svm_p)
@@ -33,10 +48,15 @@ if __name__ == '__main__':
 	print('e = %f'%svm_e)
 	print('---------------')
 
+	sent.plot_confuse_matrix(svm_cm,'Matriz de Confusao - SVM','matriz-svm')
+	fpr.append(svm_roc.get_fpr())
+	tpr.append(svm_roc.get_tpr())
+	auc.append(svm_roc.get_auc())
+
 	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
 	logs.append(l)
 	
-	dt_acc,dt_ac,dt_p,dt_r,dt_f1,dt_e,_,_ = sent.CDecisionTree()
+	dt_acc,dt_ac,dt_p,dt_r,dt_f1,dt_e,dt_cm,dt_roc = sent.CDecisionTree()
 	print('Decisao')
 	print('ac = %f'%dt_acc)
 	print('p = %f'%dt_p)
@@ -45,10 +65,15 @@ if __name__ == '__main__':
 	print('e = %f'%dt_e)
 	print('---------------')
 
+	sent.plot_confuse_matrix(dt_cm,'Matriz de Confusao - Arv. Decisao','matriz-dt')
+	fpr.append(dt_roc.get_fpr())
+	tpr.append(dt_roc.get_tpr())
+	auc.append(dt_roc.get_auc())
+
 	l = 'dt',dt_acc,dt_p,dt_r,dt_f1,dt_e,str(dt.now())
 	logs.append(l)
 
-	rf_acc,rf_ac,rf_p,rf_r,rf_f1,rf_e,_,_ = sent.CRandomForest()
+	rf_acc,rf_ac,rf_p,rf_r,rf_f1,rf_e,rf_cm,rf_roc = sent.CRandomForest()
 	print('Forest')
 	print('ac = %f'%rf_acc)
 	print('p = %f'%rf_p)
@@ -57,10 +82,15 @@ if __name__ == '__main__':
 	print('e = %f'%rf_e)
 	print('---------------')
 
+	sent.plot_confuse_matrix(rf_cm,'Matriz de Confusao - Rand. Forest','matriz-rf')
+	fpr.append(rf_roc.get_fpr())
+	tpr.append(rf_roc.get_tpr())
+	auc.append(rf_roc.get_auc())
+
 	l = 'rf',rf_acc,rf_p,rf_r,rf_f1,rf_e,str(dt.now())
 	logs.append(l)
 
-	rl_acc,rl_ac,rl_p,rl_r,rl_f1,rl_e,_,_ = sent.CLogistRegression()
+	rl_acc,rl_ac,rl_p,rl_r,rl_f1,rl_e,rl_cm,rl_roc = sent.CLogistRegression()
 	print('Logistic')
 	print('ac = %f'%rl_acc)
 	print('p = %f'%rl_p)
@@ -69,10 +99,13 @@ if __name__ == '__main__':
 	print('e = %f'%rl_e)
 	print('---------------')
 
+	sent.plot_confuse_matrix(rl_cm,'Matriz de Confusao - Reg. Logistica','matriz-rl')
+	fpr.append(rl_roc.get_fpr())
+	tpr.append(rl_roc.get_tpr())
+	auc.append(rl_roc.get_auc())
+
 	l = 'rl',rl_acc,rl_p,rl_r,rl_f1,rl_e,str(dt.now())
 	logs.append(l)
-
-	sent.write_csv(logs,'logs')
 
 	results.append(nv_ac)
 	results.append(svm_ac)
@@ -90,12 +123,9 @@ if __name__ == '__main__':
 
 	k = 10
 
+	names = ['naive','svm','tree','forest','logistic','committee']
 
-	lines = []
-
-	names = ['naive','svm','tree','forest','logistic','committee','TSviz']
-
-	ac,cmm_ac,p,r,f1,e,_,_ = sent.committee(k,pesos)
+	ac,cmm_ac,p,r,f1,e,cm_cm,cm_roc = sent.committee(k,pesos)
 
 	results.append(cmm_ac)
 
@@ -107,17 +137,26 @@ if __name__ == '__main__':
 	print("Erro %f"%e)
 	print("--------------------------")
 
+	sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz-cm')
+	fpr.append(cm_roc.get_fpr())
+	tpr.append(cm_roc.get_tpr())
+	auc.append(cm_roc.get_auc())
+
 	l = 'cm',ac,p,r,f1,e,str(dt.now())
-	lines.append(l)
+	logs.append(l)
 
-	df_ac = sent.read_csv('acuracias-pt-lexical')
+	#df_ac = sent.read_csv('acuracias-pt-lexical')
 
-	results.append(df_ac['acuracia'])
+	#results.append(df_ac['acuracia'])
 
-	sent.write_csv(lines,'committee')
+	#sent.write_csv(lines,'committee')
 
-	sent.box_plot(results,names,'comparação entre algoritmos')
+	sent.write_csv(logs,'experimentos-final/metricas')
+	sent.write_dataframe()
 
-
+	sent.plot_roc_all(fpr,tpr,auc,names)
+	sent.box_plot(results,names,'comparação entre os algoritmos')
+	
+	
 	
 

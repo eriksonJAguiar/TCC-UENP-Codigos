@@ -121,6 +121,8 @@ class SentClassifiers():
 
 		self.classifiers = []
 
+		self.df_pred = pd.DataFrame()
+
 	def find_tweet(self):
 		pos = self.read_csv('freq_pos3')['pt'].values
 		neu = self.read_csv('freq_neu3')['pt'].values
@@ -158,8 +160,6 @@ class SentClassifiers():
 					#print('Text: %s, targ: %s'%(text,target))
 
 		return X,y
-
-
 		
 	def validation_words(self,model,train,target):
 		
@@ -220,29 +220,26 @@ class SentClassifiers():
 		fpr = []
 		tpr = []
 		roc_auc_ = []
+		predicts = []
 
 		for train_index,teste_index in kf.split(X,target):
 			X_train, X_test = X[train_index],X[teste_index]
 			y_train, y_test = target[train_index], target[teste_index]
 			model.fit(X_train,y_train)
 			pred = model.predict(X_test)
+			predicts += pred.tolist() 
 			ac = accuracy_score(y_test, pred)
 			p = precision_score(y_test, pred,average='weighted')
 			r = recall_score(y_test, pred,average='weighted')
 			f1 = (2*p*r)/(p+r)
 			e = mean_squared_error(y_test, pred)
 			cm = confusion_matrix(y_test,pred)
-			#fpr_,tpr_,auc_ = self._roc(y_test,pred,[-1,0,1])
-			#self.plot_roc(fpr_,tpr_,auc_,'red','nv')
 			cm_v.append(cm)
 			ac_v.append(ac)
 			p_v.append(p)
 			r_v.append(r)
 			f1_v.append(f1)
 			e_v.append(e)
-			#fpr.append(fpr_)
-			#tpr.append(tpr_)
-			#roc_auc_.append(auc_)
 
 
 		ac = statistics.median(ac_v)
@@ -251,15 +248,11 @@ class SentClassifiers():
 		r = statistics.median(r_v)
 		e = statistics.median(e_v)
 		cm_median = self.matrix_confuse_median(cm_v)
-		#fpr,tpr = np.array(fpr),np.array(tpr)
-		#fpr,tpr = np.reshape(fpr_, -1, order='F'),np.reshape(tpr_, -1, order='F')
-		#fpr, tpr = np.sort(fpr),np.sort(tpr)
-		#roc_auc = statistics.median(roc_auc_)
 
-		#self.plot_roc(fpr,tpr,roc_auc,'red','nv')
 
-		return ac,ac_v,p,r,f1,e,cm_median
-
+		return predicts,ac,ac_v,p,r,f1,e,cm_median		
+ 
+	
 	def matrix_confuse_median(self,cm):
 		it = (cm[0]).size
 		n_class = (cm[0][0]).size
@@ -305,7 +298,6 @@ class SentClassifiers():
 
 		return tab	
 	
-
 	def mensure(self,k,tests,predicts):
 		ac_v = []
 		cm_v = []
@@ -457,15 +449,16 @@ class SentClassifiers():
 		plt.ylabel('Taxa de Verdadeiro Positivo')
 		plt.title('Grafico ROC')
 		plt.legend(loc="lower right")
-		plt.show()
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/roc.png')
+		#plt.show()
 
-	def plot_confuse_matrix(self,cm):
+	def plot_confuse_matrix(self,cm,title,file_name):
 		labels = ['Negativo', 'Neutro','Positivo']
 		cm = np.ceil(cm)
 		fig = plt.figure()
 		ax = fig.add_subplot(111)
 		cax = ax.matshow(cm)
-		plt.title('Matriz de Confusao do Classificador')
+		plt.title(title)
 		fig.colorbar(cax)
 		ax.set_xticklabels([''] + labels)
 		ax.set_yticklabels([''] + labels)
@@ -477,7 +470,8 @@ class SentClassifiers():
 		plt.tight_layout()
 		plt.xlabel('Predito')
 		plt.ylabel('Verdadeiro')
-		plt.show()
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/%s.png'%(file_name))
+		#plt.show()
 
 	def box_plot(self,results,names,title):
 
@@ -486,9 +480,11 @@ class SentClassifiers():
 		ax = fig.add_subplot(111)
 		plt.boxplot(results)
 		ax.set_xticklabels(names)
-		plt.show()
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/boxplot.png')
+		#plt.show()
+		
 
-	def CMultinomialNV(self,alpha = 0.000001):
+	def CMultinomialNV(self):
 
 		parameters = {'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'fit_prior':[True,False]}
 		
@@ -497,17 +493,19 @@ class SentClassifiers():
 		self.classifiers.append(grid_nb)
 
 		#nb = MultinomialNB(alpha)
-		ac,ac_v,p,r,f1,e,cm = self.validation_words(grid_nb,self.array_train,self.target_train)
-		#ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_nb,self.array_train,self.target_train)
+		#ac,ac_v,p,r,f1,e,cm = self.validation_words(grid_nb,self.array_train,self.target_train)
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_nb,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
-		log = 'nv',ac,p,r,f1,e,str(datetime.now())
+		
+		self.df_pred['nv'] = pred
+
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
-	def CDecisionTree(self,criterion='gini'):
+	def CDecisionTree(self):
 
-		parameters = {'criterion':('gini','entropy'),'splitter':('best','random')}
+		parameters = {'criterion':('gini','entropy'),'splitter':('best','random'),'max_features':('auto','log2','sqrt')}
 
 		grid_dt = GridSearchCV(tree.DecisionTreeClassifier(),parameters)
 
@@ -515,19 +513,20 @@ class SentClassifiers():
 		
 		#dt = tree.DecisionTreeClassifier(criterion)
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_dt,self.array_train,self.target_train)
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_dt,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 
-		log = 'dt',ac,p,r,f1,e,str(datetime.now())
+		self.df_pred['dt'] = pred
+
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
-	def CSuportVectorMachine(self,kernel='linear',gamma='auto',C=100,decision_function_shape='ovr'):
+	def CSuportVectorMachine(self):
 
 		#parameters = {'kernel':('linear', 'rbf'), 'C':[10, 100]}
 
-		parameters = {'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr']}
+		parameters = {'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr','mutinomial']}
 		
 		grid_svm = GridSearchCV(svm.SVC(),parameters)
 
@@ -535,12 +534,11 @@ class SentClassifiers():
 		
 		#csvm = svm.SVC(kernel=kernel,gamma=gamma,C=C,decision_function_shape=decision_function_shape)
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_svm,self.array_train,self.target_train)
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_svm,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 		
-		log = 'svm',ac,p,r,f1,e,str(datetime.now())
-
+		self.df_pred['svm'] = pred
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 
@@ -554,17 +552,17 @@ class SentClassifiers():
 
 		#rf = RandomForestClassifier()
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_rf,self.array_train,self.target_train)
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_rf,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 
-		log = 'rf',ac,p,r,f1,e,str(datetime.now())
+		self.df_pred['rf'] = pred
 
 		return ac,ac_v,p,r,f1,e,cm,roc_	
 
-	def CLogistRegression(self,penalty="l2",multi_class="ovr"):
+	def CLogistRegression(self):
 
-		parameters = {'penalty':['l2'],'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['newton-cg','lbfgs','sag'],'multi_class':['ovr','multinomial']}
+		parameters = {'penalty':['l2'],'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['newton-cg','lbfgs','sag'],'multi_class':['ovr']}
 		#newton-cg’, ‘sag’, ‘saga’ and ‘lbfgs’
 		#'penalty':('l1'),'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['lbfgs', 'liblinear', 'sag', 'saga']
 		
@@ -574,33 +572,32 @@ class SentClassifiers():
 
 		#lr = LogisticRegression(penalty=penalty,multi_class=multi_class)
 
-		ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_lr,self.array_train,self.target_train)
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_lr,self.array_train,self.target_train)
 		roc_  = Roc()
 		roc_ = self.roc(cm)
 
-		log = 'rl',ac,p,r,f1,e,str(datetime.now())
+		self.df_pred['lr'] = pred
+
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 	
 	def committee(self,k,pesos):
-    	#'naive','svm','tree','forest','logistic'
-		#nv = MultinomialNB(alpha=0.000001)
-		#dt = tree.DecisionTreeClassifier(criterion='gini')
-		#csvm = svm.SVC(kernel='linear',gamma='auto',C=100,decision_function_shape='ovr')
-		#rf = RandomForestClassifier()
-		#lr = LogisticRegression(penalty='l2',multi_class='ovr')
-
 		model = VotingClassifier(estimators=[('nv', self.classifiers[0]), ('svm',self.classifiers[1]), ('dt',self.classifiers[2]) ,('rf', self.classifiers[3]), ('lr',self.classifiers[4])], weights=pesos,voting='hard')
 
 
-		ac,ac_v,p,r,f1,e,cm_median = self.cross_apply(model,self.array_train,self.target_train)
+		pred,ac,ac_v,p,r,f1,e,cm_median = self.cross_apply(model,self.array_train,self.target_train)
 
 		roc_ = Roc()
 
 		roc_ = self.roc(cm_median)
 
-		return ac,ac_v,p,r,f1,e,cm_median,roc_
+		self.df_pred['cm'] = pred
 
+
+		return ac,ac_v,p,r,f1,e,cm_median,roc_
+	
+	def write_dataframe(self):
+    		self.write_csv(self.df_pred,'experimentos-final/predicoes')
 
 
 
