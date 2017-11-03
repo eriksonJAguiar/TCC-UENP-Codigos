@@ -71,6 +71,14 @@ def exlusivos(vet_neg,vet_neu,vet_pos):
 
 	return ex_neg, ex_neu, ex_pos
 
+def bigram(frases,vet_neg, vet_neu,vet_pos):
+    bi_neg = []
+    bi_neu = []
+    bi_pos = []
+    for f in frases:
+        if f.find()
+
+
 if __name__ == '__main__':
     
     df_tweets = read_csv('dataset-portuguese')  
@@ -162,7 +170,7 @@ if __name__ == '__main__':
     df_pos['en'] = words_pos['en']
     df_pos['es'] = words_pos['es']
 
-    write_csv(df_neg,'freq_neg3')
-    write_csv(df_neu,'freq_neu3')
-    write_csv(df_pos,'freq_pos3')
+    write_csv(df_neg,'bigram_neg')
+    write_csv(df_neu,'bigram_neu')
+    write_csv(df_pos,'bigram_pos')
 
