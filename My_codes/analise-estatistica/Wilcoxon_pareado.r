@@ -1,9 +1,9 @@
 #Calcular o teste de Wilcoxon:
   
-file <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/predicoes.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
-watson <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-watson.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
-microsoft <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-microsoft.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
-tsviz <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-TSviz.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+file <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/My_codes/files_extern/experimentos-final/predicoes.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+#watson <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-watson.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+#microsoft <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-microsoft.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+#tsviz <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-TSviz.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
 
 
 nv <- file$nv
@@ -13,16 +13,23 @@ rf <- file$rf
 rl <- file$rl
 cm <- file$cm
 
-value <- c(nv,svm,dt,rf,rl,cm,watson$opiniao,microsoft$opiniao,tsviz$opiniao)
+#value <- c(nv,svm,dt,rf,rl,cm,watson$opiniao,microsoft$opiniao,tsviz$opiniao)
 
-n <- 9
-k <- length(value)/9
+value <-c(cm,rf,rl,svm,nv,dt)
+
+#n <- 9
+#k <- length(value)/9
+#len <- length(value)
+
+n <- 6
+k <- length(value)/6
 len <- length(value)
 
 #Criar os níveis:
 #1º específicais quantos e as ordens. Exemplo:
  # z <- gl(5, 30, 150)
-z <- gl(n,k,len,labels = c("nv","svm","dt","rf","rl","cm","watson","microsoft","tsviz"))
+#z <- gl(n,k,len,labels = c("nv","svm","dt","rf","rl","cm","watson","microsoft","tsviz"))
+z <- gl(n,k,len,labels = c("cm","rf","rl","svm","nv","dt"))
 #resulta em números de 1 até 5, repetidos 30 vezes cada, resultando em um total de 150.
 #z <- gl(X, Y, Z) onde, X é quantidade de níveis; Y quantas vezes devem ser repetidos
 #cada um antes do próximo; Z o total de ocorrencias

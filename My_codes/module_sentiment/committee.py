@@ -7,7 +7,7 @@ import pandas as pd
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-portuguese')
+	sent = SentClassifiers('dataset-english2')
 
 	results = []
 	acuracias = []
@@ -179,13 +179,13 @@ if __name__ == '__main__':
 
 	#results.append(df_ac['acuracia'])
 
-	#sent.write_csv(lines,'committee')
+	sent.write_csv(lines,'committee')
 
-	#sent.write_csv(logs,'experimentos-final/metricas')
+	sent.write_csv(logs,'experimentos-final/metricas')
 	#sent.write_dataframe()
 
 	#sent.plot_roc_all(fpr,tpr,auc,names)
-	#sent.box_plot(results,names,'comparação entre os algoritmos')
+	sent.box_plot(results,names,'comparação entre os algoritmos')
 	
 	
 	

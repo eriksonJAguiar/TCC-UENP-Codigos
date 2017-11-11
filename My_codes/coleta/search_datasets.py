@@ -18,7 +18,7 @@ twitter = TwitterAPI(consumer_key, consumer_secret,auth_type='oAuth2')
 
 
 def read_csv(file):
-		df1 = pd.DataFrame.from_csv('files_extern/original-datasets/%s.csv'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+		df1 = pd.DataFrame.from_csv('../files_extern/original-datasets/%s.csv'%(file),sep=',',index_col=0,encoding ='ISO-8859-1')
 
 		df1 = df1.reset_index()
 
@@ -26,23 +26,25 @@ def read_csv(file):
 
 def write_csv(data,file):
 	df = pd.DataFrame(data)
-	df.to_csv('files_extern/%s.csv'%(file), mode='a', sep=';',index=False, header=False)
+	df.to_csv('../files_extern/%s.csv'%(file), mode='a', sep=';',index=False, header=False)
 
 
 if __name__ == '__main__':
 
-	df = read_csv('sanders-en')
+	df = read_csv('English_Twitter_sentiment')
 	
 	n = len(df.axes[0])
 
 	dados = []
-	a = 20
+	a = 20*2000
+
+	i = 2000
 
 	for i in range(n):
 		try:
 			tweet = twitter.request('statuses/show/:%d' % df['TweetID'][i])
 			text = ''
-			sent = df['opiniao'][i]
+			sent = df['HandLabel'][i]
 			for item in tweet:
 				if 'limit' in item:
     					print('%d tweets missed'%item['limit'].get('track'))
@@ -54,14 +56,14 @@ if __name__ == '__main__':
 			dados.append(line)
 
 			if i > a:
-				write_csv('dataset-english-senders')
+				write_csv('dataset-english2')
 				dados = []
 				a += 20
 
 		except Exception as inst:
+			write_csv(dados,'dataset-english2')
+			dados = []
 			pass
-
-	write_csv(dados,'dataset-english-senders')
 
 
 		

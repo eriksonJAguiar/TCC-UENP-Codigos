@@ -1,7 +1,7 @@
-file <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/predicoes.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
-watson <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-watson.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
-microsoft <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-microsoft.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
-tsviz <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-TSviz.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+file <- read.table('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/My_codes/files_extern/experimentos-final/predicoes.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+#watson <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-watson.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+#microsoft <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-microsoft.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
+#tsviz <- read.csv('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Material/My_codes/files_extern/experimentos-final/pred-TSviz.csv', header=TRUE, sep=';', stringsAsFactors=FALSE)
 
 
 nv <- file$nv
@@ -11,14 +11,32 @@ rf <- file$rf
 rl <- file$rl
 cm <- file$cm
 
+
 #value <- c(nv,svm,dt,rf,rl,cm,watson$opiniao,microsoft$opiniao,tsviz$opiniao)
 
-value <- c(nv,svm,dt,rf,rl,cm)
+value <-c(cm,rf,rl,svm,nv,dt) #c(dt,nv,svm,rl,rf,cm)
 
-k <- length(value)/6
+#grupo <- c(rep('cm',k),rep('rf',k),rep('rl',k),rep('svm',k),rep('nv',k),rep('dt',k))
 
-grupo <- c(rep('nv',k),rep('svm',k),rep('dt',k),rep('rf',k),rep('rl',k),rep('cm',k))
+n <- 6
+k <- length(value)/n
+len <- length(value)
 
-m <-  matrix(grupo,value)
+z <- gl(n,k,len,labels = c("cm","rf","rl","svm","nv","dt"))
 
-f <- friedman.test.
+m <- matrix(value,
+       nrow = k,
+       ncol=n,
+       byrow = TRUE,
+       dimnames = list(1 : k,c("cm","rf","rl","svm","nv","dt") )) #c("dt","nv","svm","rl","rf","cm")
+
+
+f <- friedman.test(m) 
+
+fp <- posthoc.friedman.nemenyi.test(m)
+
+nt <- NemenyiTest(value,z, out.list = TRUE)
+
+
+
+

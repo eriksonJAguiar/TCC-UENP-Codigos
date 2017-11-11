@@ -85,7 +85,7 @@ class SentClassifiers():
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
 			#expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
-			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
+			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('english')]
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
@@ -480,7 +480,7 @@ class SentClassifiers():
 		ax = fig.add_subplot(111)
 		plt.boxplot(results)
 		ax.set_xticklabels(names)
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/boxplot.png')
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/boxplot-en.png')
 		#plt.show()
 		
 
