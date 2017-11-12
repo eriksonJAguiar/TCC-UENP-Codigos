@@ -112,7 +112,7 @@ if __name__ == '__main__':
 	start = time.time()
 	rl_acc,rl_ac,rl_p,rl_r,rl_f1,rl_e,rl_cm,rl_roc = sent.CLogistRegression()
 	end = time.time()
-	custos['rf'] = [end-start]
+	custos['rl'] = [end-start]
 
 	print('Logistic')
 	print('ac = %f'%rl_acc)
