@@ -146,11 +146,10 @@ if __name__ == '__main__':
 	start = time.time()
 	pesos = sent.calc_weigth(acuracias)
 
-	k = 10
 
 	names = ['naive','svm','tree','forest','logistic','committee']
 
-	ac,cmm_ac,p,r,f1,e,cm_cm,cm_roc = sent.committee(k,pesos)
+	ac,cmm_ac,p,r,f1,e,cm_cm,cm_roc = sent.committee(pesos)
 	end = time.time()
 	custos['cm'] = [end-start]
 	

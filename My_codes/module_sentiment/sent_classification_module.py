@@ -49,7 +49,7 @@ class SentClassifiers():
 
 	def read_csv(self,file):
 
-		df1 = pd.DataFrame.from_csv('../files_extern/%s.csv'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+		df1 = pd.DataFrame.from_csv('../files_external/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
 
 		df1 = df1.reset_index()
 
@@ -57,7 +57,7 @@ class SentClassifiers():
 
 	def write_csv(self,data,file):
 		df = pd.DataFrame(data)
-		df.to_csv('../files_extern/'+file+'.csv', mode='a', sep=';',index=False, header=False)
+		df.to_csv('../files_external/'+file+'.csv', mode='a', sep=';',index=False, header=False)
 
 	def getSTrain():
 	
@@ -85,7 +85,7 @@ class SentClassifiers():
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
 			#expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
-			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('english')]
+			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
@@ -111,17 +111,32 @@ class SentClassifiers():
 		return new_df
 
 	#construtor
-	def __init__(self,file):
+	def __init__(self,file=None,dataframe=None):
 		
-		self.train_df = self.initial(file)
+		if dataframe is None:
+			self.train_df = self.initial(file)
+			
+			self.array_train = self.train_df['tweet'].values
+
+			self.target_train = self.train_df['opiniao'].values
+
+			self.classifiers = []
+
+			self.df_pred = pd.DataFrame()
 		
-		self.array_train = self.train_df['tweet'].values
-
-		self.target_train = self.train_df['opiniao'].values
-
-		self.classifiers = []
-
-		self.df_pred = pd.DataFrame()
+		elif file is None:
+			dataframe['tweet'] = self.clear(dataframe['tweet'])
+			
+			self.array_train = dataframe['tweet'].values
+			
+			self.target_train = dataframe['sentiment'].values
+			
+			self.classifiers = []
+			
+			self.df_pred = pd.DataFrame()
+		
+		else:
+			print('parametro incorreto')
 
 	def find_tweet(self):
 		pos = self.read_csv('freq_pos3')['pt'].values
@@ -247,10 +262,60 @@ class SentClassifiers():
 		f1 = statistics.median(f1_v)
 		r = statistics.median(r_v)
 		e = statistics.median(e_v)
+		#cm_median = self.matrix_confuse_median(cm_v)
+		cm_median = []
+
+		return predicts,ac,ac_v,p,r,f1,e,cm_median
+
+	def cross_apply_(self,model,train,target):
+
+		count_vect = CountVectorizer()
+		X = count_vect.fit_transform(train)
+		#kf = KFold(10, shuffle=True, random_state=1)
+
+		ac_v = []
+		cm_v = []
+		p_v = []
+		r_v = []
+		f1_v = []
+		e_v = []
+		fpr = []
+		tpr = []
+		roc_auc_ = []
+		predicts = []
+		j = 20
+		for i in range(len(X)):
+			index_test = [y for y in range(i,j)]
+			index_train = [y for y in item if y not in index_test]
+			X_train, X_test = np.array(X)[index_train],np.array(X)[index_test]
+			y_train, y_test = np.array(target)[index_train], np.array(target)[index_test]
+			
+
+			model.fit(X_train,y_train)
+			pred = model.predict(X_test)
+			ac = accuracy_score(y_test, pred)
+			p = precision_score(y_test, pred,average='weighted')
+			r = recall_score(y_test, pred,average='weighted')
+			f1 = (2*p*r)/(p+r)
+			e = mean_squared_error(y_test, pred)
+			cm = confusion_matrix(y_test,pred)
+			cm_v.append(cm)
+			ac_v.append(ac)
+			p_v.append(p)
+			r_v.append(r)
+			f1_v.append(f1)
+			e_v.append(e)
+
+
+		ac = statistics.median(ac_v)
+		p = statistics.median(p_v)
+		f1 = statistics.median(f1_v)
+		r = statistics.median(r_v)
+		e = statistics.median(e_v)
 		cm_median = self.matrix_confuse_median(cm_v)
 
 
-		return predicts,ac,ac_v,p,r,f1,e,cm_median		
+		return predicts,ac,ac_v,p,r,f1,e,cm_median			
  
 	
 	def matrix_confuse_median(self,cm):
@@ -297,60 +362,6 @@ class SentClassifiers():
 				j += 1
 
 		return tab	
-	
-	def mensure(self,k,tests,predicts):
-		ac_v = []
-		cm_v = []
-		p_v = []
-		r_v = []
-		f1_v = []
-		e_v = []
-
-		#print(tests[str(i)])
-
-		for i in range(1,k+1):
-			ac = accuracy_score(tests[str(i)], predicts[str(i)])
-			p = precision_score(tests[str(i)], predicts[str(i)],average='weighted')
-			r = recall_score(tests[str(i)], predicts[str(i)],average='weighted')
-			f1 = (2*p*r)/(p+r)
-			e = mean_squared_error(tests[str(i)], predicts[str(i)])
-			cm = confusion_matrix(tests[str(i)], predicts[str(i)])
-			cm_v.append(cm)
-			ac_v.append(ac)
-			p_v.append(p)
-			r_v.append(r)
-			f1_v.append(f1)
-			e_v.append(e)
-
-		ac = statistics.median(ac_v)
-		p = statistics.median(p_v)
-		f1 = statistics.median(f1_v)
-		r = statistics.median(r_v)
-		e = statistics.median(e_v)
-		cm_median = self.matrix_confuse_median(cm_v)
-
-		return ac,ac_v,p,r,f1,e,cm_median
-
-	def _roc(self,y_true,y_pred,y_class):
-		n = len(y_class)
-
-		fpr_ = []
-		tpr_ = []
-		roc_auc_ = []
-
-		for i in range(n):
-			fpr,tpr,_ = roc_curve(y_true,y_pred,pos_label=y_class[i])
-			roc_auc_.append(auc(fpr,tpr))
-			fpr_.append(fpr)
-			tpr_.append(tpr)
-
-		fpr_,tpr_ = np.array(fpr_),np.array(tpr_)
-		fpr, tpr = np.reshape(fpr_, -1, order='F'),np.reshape(tpr_, -1, order='F')
-		fpr, tpr = np.sort(fpr),np.sort(tpr)
-		
-		roc_auc = statistics.median(roc_auc_)
-
-		return fpr,tpr,roc_auc
 
 	def roc(self,cm):
 
@@ -387,10 +398,6 @@ class SentClassifiers():
 				esp.append(e)	
 				tpr.append(e)
 
-			#roc_auc.append(auc(re,esp))
-			#fpr.append(re)
-			#tpr.append(esp)
-
 		roc = Roc()
 
 		fpr,tpr = np.array(fpr),np.array(tpr)
@@ -398,15 +405,6 @@ class SentClassifiers():
 		roc.set_tpr(np.sort(tpr))
 
 		roc.set_auc(auc(roc.get_fpr(),roc.get_tpr()))
-
-		#print(fpr)
-		#print(tpr)
-		#print('roc = %f'%roc_auc)
-
-
-		#write_csv(fpr,'roc_2')
-		#write_csv(tpr,'roc_2')
-
 
 		return roc
 
@@ -449,7 +447,7 @@ class SentClassifiers():
 		plt.ylabel('Taxa de Verdadeiro Positivo')
 		plt.title('Grafico ROC')
 		plt.legend(loc="lower right")
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/roc.png')
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/roc.png')
 		#plt.show()
 
 	def plot_confuse_matrix(self,cm,title,file_name):
@@ -470,7 +468,7 @@ class SentClassifiers():
 		plt.tight_layout()
 		plt.xlabel('Predito')
 		plt.ylabel('Verdadeiro')
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/%s.png'%(file_name))
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/%s.png'%(file_name))
 		#plt.show()
 
 	def box_plot(self,results,names,title):
@@ -480,7 +478,7 @@ class SentClassifiers():
 		ax = fig.add_subplot(111)
 		plt.boxplot(results)
 		ax.set_xticklabels(names)
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/Figuras/experimentos-final/boxplot-en.png')
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/boxplot-allan.png')
 		#plt.show()
 		
 
@@ -584,7 +582,7 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
 	
-	def committee(self,k,pesos):
+	def committee(self,pesos):
 		model = VotingClassifier(estimators=[('nv', self.classifiers[0]), ('svm',self.classifiers[1]), ('dt',self.classifiers[2]) ,('rf', self.classifiers[3]), ('lr',self.classifiers[4])], weights=pesos,voting='hard')
 
 
@@ -602,7 +600,49 @@ class SentClassifiers():
 	def write_dataframe(self):
     		self.write_csv(self.df_pred,'experimentos-final/predicoes')
 
+	def pred_texts(self,dataset):
+
+		test = self.clear(dataset)
+
+		count_vect = CountVectorizer()
+		X = count_vect.fit_transform(test)
+		train = count_vect.transform(self.array_train)
 
 
+		parameters = []
+
+		parameters.append({'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'fit_prior':[True,False]})
+		parameters.append({'criterion':('gini','entropy'),'splitter':('best','random'),'max_features':('auto','log2','sqrt')})
+		parameters.append({'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr','mutinomial']})	
+		parameters.append({'n_estimators':[1,5,10,20,30],'criterion':('gini','entropy')})
+		parameters.append({'penalty':['l2'],'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['newton-cg','lbfgs','sag'],'multi_class':['ovr']})
+
+		grid_nb = GridSearchCV(MultinomialNB(),parameters[0])
+		grid_dt = GridSearchCV(tree.DecisionTreeClassifier(),parameters[1])
+		grid_svm = GridSearchCV(svm.SVC(),parameters[2])
+		grid_rf = GridSearchCV(RandomForestClassifier(),parameters[3])
+		grid_lr = GridSearchCV(LogisticRegression(),parameters[4])
+
+		pesos = []
+		
+		df_pesos = self.read_csv('pesos.csv')
+
+		ac = df_pesos['ac'].values
+
+		pesos = self.calc_weigth(ac)
+
+
+		comite = VotingClassifier(estimators=[('nv', grid_nb), ('svm',grid_svm), ('dt',grid_dt) ,('rf', grid_rf), ('lr',grid_lr)], weights=pesos,voting='hard')
+
+		comite.fit(train,self.target_train)
+
+		pred = comite.predict(X)
+
+		df = pd.DataFrame()
+
+		df['tweet'] = dataset
+		df['sentiment'] = pred
+
+		return df
 
 
