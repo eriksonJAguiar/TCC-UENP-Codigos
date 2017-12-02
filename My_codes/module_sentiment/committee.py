@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from sent_classification_module import *
 from class_roc import Roc
 import collections
@@ -7,7 +8,7 @@ import pandas as pd
 
 if __name__ == '__main__':
 
-	sent = SentClassifiers('dataset-english2')
+	sent = SentClassifiers(file='dataset-portuguese.csv')
 
 	results = []
 	acuracias = []
@@ -38,10 +39,11 @@ if __name__ == '__main__':
 	print("time %f"%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(nv_cm,'Matriz de Confusao - Naive Bayes','matriz-nv')
-	#fpr.append(nv_roc.get_fpr())
-	#tpr.append(nv_roc.get_tpr())
-	#auc.append(nv_roc.get_auc())
+	
+	sent.plot_confuse_matrix(nv_cm,'Matriz de Confusao - Naive Bayes','matriz2-nv')
+	fpr.append(nv_roc.get_fpr())
+	tpr.append(nv_roc.get_tpr())
+	auc.append(nv_roc.get_auc())
 
 	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
 	logs.append(l)
@@ -59,10 +61,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(svm_cm,'Matriz de Confusao - SVM','matriz-svm')
-	#fpr.append(svm_roc.get_fpr())
-	#tpr.append(svm_roc.get_tpr())
-	#auc.append(svm_roc.get_auc())
+	sent.plot_confuse_matrix(svm_cm,'Matriz de Confusao - SVM','matriz-svm2')
+	fpr.append(svm_roc.get_fpr())
+	tpr.append(svm_roc.get_tpr())
+	auc.append(svm_roc.get_auc())
 
 	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
 	logs.append(l)
@@ -80,10 +82,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(dt_cm,'Matriz de Confusao - Arv. Decisao','matriz-dt')
-	#fpr.append(dt_roc.get_fpr())
-	#tpr.append(dt_roc.get_tpr())
-	#auc.append(dt_roc.get_auc())
+	sent.plot_confuse_matrix(dt_cm,'Matriz de Confusao - Arv. Decisao','matriz2-dt')
+	fpr.append(dt_roc.get_fpr())
+	tpr.append(dt_roc.get_tpr())
+	auc.append(dt_roc.get_auc())
 
 	l = 'dt',dt_acc,dt_p,dt_r,dt_f1,dt_e,str(dt.now())
 	logs.append(l)
@@ -101,10 +103,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(rf_cm,'Matriz de Confusao - Rand. Forest','matriz-rf')
-	#fpr.append(rf_roc.get_fpr())
-	#tpr.append(rf_roc.get_tpr())
-	#auc.append(rf_roc.get_auc())
+	sent.plot_confuse_matrix(rf_cm,'Matriz de Confusao - Rand. Forest','matriz2-rf')
+	fpr.append(rf_roc.get_fpr())
+	tpr.append(rf_roc.get_tpr())
+	auc.append(rf_roc.get_auc())
 
 	l = 'rf',rf_acc,rf_p,rf_r,rf_f1,rf_e,str(dt.now())
 	logs.append(l)
@@ -123,10 +125,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(rl_cm,'Matriz de Confusao - Reg. Logistica','matriz-rl')
-	#fpr.append(rl_roc.get_fpr())
-	#tpr.append(rl_roc.get_tpr())
-	#auc.append(rl_roc.get_auc())
+	sent.plot_confuse_matrix(rl_cm,'Matriz de Confusao - Reg. Logistica','matriz2-rl')
+	fpr.append(rl_roc.get_fpr())
+	tpr.append(rl_roc.get_tpr())
+	auc.append(rl_roc.get_auc())
 
 	l = 'rl',rl_acc,rl_p,rl_r,rl_f1,rl_e,str(dt.now())
 	logs.append(l)
@@ -155,7 +157,7 @@ if __name__ == '__main__':
 	
 	results.append(cmm_ac)
 
-	print("Comitê")
+	print("Comite")
 	print("Acuracia %f"%ac)
 	print("Precisao %f"%p)
 	print("Recall %f"%r)
@@ -166,10 +168,10 @@ if __name__ == '__main__':
 
 	sent.write_csv(custos,'experimentos-final/custo-tempo')
 
-	#sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz-cm')
-	#fpr.append(cm_roc.get_fpr())
-	#tpr.append(cm_roc.get_tpr())
-	#auc.append(cm_roc.get_auc())
+	sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz2-cm')
+	fpr.append(cm_roc.get_fpr())
+	tpr.append(cm_roc.get_tpr())
+	auc.append(cm_roc.get_auc())
 
 	l = 'cm',ac,p,r,f1,e,str(dt.now())
 	logs.append(l)
@@ -178,13 +180,13 @@ if __name__ == '__main__':
 
 	#results.append(df_ac['acuracia'])
 
-	sent.write_csv(lines,'committee')
+	#sent.write_csv(lines,'committee')
 
 	sent.write_csv(logs,'experimentos-final/metricas')
 	#sent.write_dataframe()
 
 	#sent.plot_roc_all(fpr,tpr,auc,names)
-	sent.box_plot(results,names,'comparação entre os algoritmos')
+	sent.box_plot(results,names,'comparacao entre os algoritmos','boxplot2')
 	
 	
 	

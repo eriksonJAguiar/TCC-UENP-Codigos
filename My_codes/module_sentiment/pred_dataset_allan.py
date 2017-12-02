@@ -10,19 +10,23 @@ import random
 
 def read_file(file):
 
-	df1 = pd.DataFrame.from_csv('../files_external/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+	df1 = pd.DataFrame.from_csv('datasets-allan/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
 
 	df1 = df1.reset_index()
 
 	return df1
 
+def write_file(data,file):
+		df = pd.DataFrame(data)
+		df.to_csv('Result/'+file+'.csv', mode='a', sep=';',index=False, header=False)
+
 
 def predict():
 
-	for _, _, f in os.walk('../files_external/datasets-allan'):
+	for _, _, f in os.walk('datasets-allan'):
 		files.append(f)
 
-
+	
 	for f in files[0]:
 		df = read_file('datasets-allan/%s'%(f))
 		print('Realizando a predição para %s'%(f))
@@ -40,13 +44,14 @@ def config_dataset():
 
 	files = []
 
-	for _, _, f in os.walk('../files_external/datasets-allan'):
+	for _, _, f in os.walk('datasets-allan'):
+		print(f)
 		files.append(f)
 
 	twitter = pd.DataFrame(columns=['user','tweet','coordenada','horario','sentiment'])
 
 	for f in files[0]:
-		df = read_file('datasets-allan/result/%s'%(f))
+		df = read_file(f)
 		twitter = pd.concat([twitter,df])
 		
 
@@ -65,15 +70,19 @@ def config_dataset():
 			twt.append(t[r])
 			snt.append(s[r])
 
-	new_twitter['tweet'] = twt
-	new_twitter['sentiment'] = snt
+	#new_twitter['tweet'] = twt
+	#new_twitter['sentiment'] = snt
 
-	return new_twitter
+	write_file(new_twitter,'dataset-parcial')
+
+	return twitter
 
 
 if __name__ == '__main__':
 
 	dataset = config_dataset()
+
+	exit(0)
 
 	sent = SentClassifiers(dataframe=dataset)
 
@@ -106,10 +115,10 @@ if __name__ == '__main__':
 	print("time %f"%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(nv_cm,'Matriz de Confusao - Naive Bayes','matriz-nv')
-	#fpr.append(nv_roc.get_fpr())
-	#tpr.append(nv_roc.get_tpr())
-	#auc.append(nv_roc.get_auc())
+	sent.plot_confuse_matrix(nv_cm,'Matriz de Confusao - Naive Bayes','matriz-nv')
+	fpr.append(nv_roc.get_fpr())
+	tpr.append(nv_roc.get_tpr())
+	auc.append(nv_roc.get_auc())
 
 	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
 	logs.append(l)
@@ -127,10 +136,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(svm_cm,'Matriz de Confusao - SVM','matriz-svm')
-	#fpr.append(svm_roc.get_fpr())
-	#tpr.append(svm_roc.get_tpr())
-	#auc.append(svm_roc.get_auc())
+	sent.plot_confuse_matrix(svm_cm,'Matriz de Confusao - SVM','matriz-svm')
+	fpr.append(svm_roc.get_fpr())
+	tpr.append(svm_roc.get_tpr())
+	auc.append(svm_roc.get_auc())
 
 	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
 	logs.append(l)
@@ -148,10 +157,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(dt_cm,'Matriz de Confusao - Arv. Decisao','matriz-dt')
-	#fpr.append(dt_roc.get_fpr())
-	#tpr.append(dt_roc.get_tpr())
-	#auc.append(dt_roc.get_auc())
+	sent.plot_confuse_matrix(dt_cm,'Matriz de Confusao - Arv. Decisao','matriz-dt')
+	fpr.append(dt_roc.get_fpr())
+	tpr.append(dt_roc.get_tpr())
+	auc.append(dt_roc.get_auc())
 
 	l = 'dt',dt_acc,dt_p,dt_r,dt_f1,dt_e,str(dt.now())
 	logs.append(l)
@@ -169,10 +178,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(rf_cm,'Matriz de Confusao - Rand. Forest','matriz-rf')
-	#fpr.append(rf_roc.get_fpr())
-	#tpr.append(rf_roc.get_tpr())
-	#auc.append(rf_roc.get_auc())
+	sent.plot_confuse_matrix(rf_cm,'Matriz de Confusao - Rand. Forest','matriz-rf')
+	fpr.append(rf_roc.get_fpr())
+	tpr.append(rf_roc.get_tpr())
+	auc.append(rf_roc.get_auc())
 
 	l = 'rf',rf_acc,rf_p,rf_r,rf_f1,rf_e,str(dt.now())
 	logs.append(l)
@@ -191,10 +200,10 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print('---------------')
 
-	#sent.plot_confuse_matrix(rl_cm,'Matriz de Confusao - Reg. Logistica','matriz-rl')
-	#fpr.append(rl_roc.get_fpr())
-	#tpr.append(rl_roc.get_tpr())
-	#auc.append(rl_roc.get_auc())
+	sent.plot_confuse_matrix(rl_cm,'Matriz de Confusao - Reg. Logistica','matriz-rl')
+	fpr.append(rl_roc.get_fpr())
+	tpr.append(rl_roc.get_tpr())
+	auc.append(rl_roc.get_auc())
 
 	l = 'rl',rl_acc,rl_p,rl_r,rl_f1,rl_e,str(dt.now())
 	logs.append(l)
@@ -232,26 +241,19 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print("--------------------------")
 
-	sent.write_csv(custos,'experimentos-final/custo-tempo-dataset-allan')
+	sent.write_csv(custos,'custo-tempo')
 
-	#sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz-cm')
-	#fpr.append(cm_roc.get_fpr())
-	#tpr.append(cm_roc.get_tpr())
-	#auc.append(cm_roc.get_auc())
+	sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz-cm')
+	fpr.append(cm_roc.get_fpr())
+	tpr.append(cm_roc.get_tpr())
+	auc.append(cm_roc.get_auc())
 
 	l = 'cm',ac,p,r,f1,e,str(dt.now())
 	logs.append(l)
 
-	#df_ac = sent.read_csv('acuracias-pt-lexical')
+	sent.write_csv(logs,'metricas')
 
-	#results.append(df_ac['acuracia'])
-
-	#sent.write_csv(lines,'committee')
-
-	sent.write_csv(logs,'experimentos-final/metricas-dataset-allan')
-	#sent.write_dataframe()
-
-	#sent.plot_roc_all(fpr,tpr,auc,names)
-	sent.box_plot(results,names,'comparação entre os algoritmos')
+	sent.plot_roc_all(fpr,tpr,auc,names)
+	sent.box_plot(results,names,'comparação entre os algoritmos','boxplot')
 	
 	

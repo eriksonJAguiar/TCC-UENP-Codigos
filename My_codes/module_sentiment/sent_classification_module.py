@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #Modelos de classificacao
 from sklearn.model_selection import train_test_split
 from sklearn.naive_bayes import MultinomialNB, BernoulliNB
@@ -123,6 +124,12 @@ class SentClassifiers():
 			self.classifiers = []
 
 			self.df_pred = pd.DataFrame()
+
+			self.count_models = 0
+
+			self.titles = ['Naive Bayes', 'SVM', 'Arvore de Decisao','Random Forest','Regressao Logistica','Comite']
+
+			self.imagens = ['nv','svm','dt','rf','rl','cm']
 		
 		elif file is None:
 			dataframe['tweet'] = self.clear(dataframe['tweet'])
@@ -220,6 +227,37 @@ class SentClassifiers():
 
 		return ac,ac_v,p,r,f1,e,cm_median
 
+	def plot_confuse_matrix(self,cm,title,file_name):
+		labels = ['Negativo', 'Neutro','Positivo']
+		cm = np.ceil(cm)
+		fig = plt.figure()
+		ax = fig.add_subplot(111)
+		cax = ax.matshow(cm)
+		plt.title(title)
+		fig.colorbar(cax)
+		ax.set_xticklabels([''] + labels)
+		ax.set_yticklabels([''] + labels)
+
+		thresh = cm.max()/2
+		for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
+			plt.text(j, i, cm[i, j],horizontalalignment="center",color="white" if cm[i, j] > thresh else "black")
+
+		plt.tight_layout()
+		plt.xlabel('Predito')
+		plt.ylabel('Verdadeiro')
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/%s.png'%(file_name))
+		#plt.show()
+
+	def box_plot(self,results,names,title,file):
+
+		fig = plt.figure()
+		fig.suptitle(title)
+		ax = fig.add_subplot(111)
+		plt.boxplot(results)
+		ax.set_xticklabels(names)
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/%s.png'%(file))
+		#plt.show()
+
 	def cross_apply(self,model,train,target):
 
 		count_vect = CountVectorizer()
@@ -237,12 +275,12 @@ class SentClassifiers():
 		roc_auc_ = []
 		predicts = []
 
+
 		for train_index,teste_index in kf.split(X,target):
 			X_train, X_test = X[train_index],X[teste_index]
 			y_train, y_test = target[train_index], target[teste_index]
 			model.fit(X_train,y_train)
 			pred = model.predict(X_test)
-			predicts += pred.tolist() 
 			ac = accuracy_score(y_test, pred)
 			p = precision_score(y_test, pred,average='weighted')
 			r = recall_score(y_test, pred,average='weighted')
@@ -262,106 +300,29 @@ class SentClassifiers():
 		f1 = statistics.median(f1_v)
 		r = statistics.median(r_v)
 		e = statistics.median(e_v)
-		#cm_median = self.matrix_confuse_median(cm_v)
-		cm_median = []
-
-		return predicts,ac,ac_v,p,r,f1,e,cm_median
-
-	def cross_apply_(self,model,train,target):
-
-		count_vect = CountVectorizer()
-		X = count_vect.fit_transform(train)
-		#kf = KFold(10, shuffle=True, random_state=1)
-
-		ac_v = []
-		cm_v = []
-		p_v = []
-		r_v = []
-		f1_v = []
-		e_v = []
-		fpr = []
-		tpr = []
-		roc_auc_ = []
-		predicts = []
-		j = 20
-		for i in range(len(X)):
-			index_test = [y for y in range(i,j)]
-			index_train = [y for y in item if y not in index_test]
-			X_train, X_test = np.array(X)[index_train],np.array(X)[index_test]
-			y_train, y_test = np.array(target)[index_train], np.array(target)[index_test]
-			
-
-			model.fit(X_train,y_train)
-			pred = model.predict(X_test)
-			ac = accuracy_score(y_test, pred)
-			p = precision_score(y_test, pred,average='weighted')
-			r = recall_score(y_test, pred,average='weighted')
-			f1 = (2*p*r)/(p+r)
-			e = mean_squared_error(y_test, pred)
-			cm = confusion_matrix(y_test,pred)
-			cm_v.append(cm)
-			ac_v.append(ac)
-			p_v.append(p)
-			r_v.append(r)
-			f1_v.append(f1)
-			e_v.append(e)
-
-
-		ac = statistics.median(ac_v)
-		p = statistics.median(p_v)
-		f1 = statistics.median(f1_v)
-		r = statistics.median(r_v)
-		e = statistics.median(e_v)
-		cm_median = self.matrix_confuse_median(cm_v)
-
+		acc_median,cm_median = self.matrix_confuse_median(ac_v,cm_v)
+		#print('acuracia -> %f'%acc_median)
 
 		return predicts,ac,ac_v,p,r,f1,e,cm_median			
  
 	
-	def matrix_confuse_median(self,cm):
-		it = (cm[0]).size
-		n_class = (cm[0][0]).size
+	def matrix_confuse_median(self,acc,cm):
+		
+		for j in range(len(acc)):
+			for i in range(len(acc)-1):
+				if acc[i] > acc[i+1]:
+					aux = acc[i+1]
+					acc[i+1] = acc[i]
+					acc[i] = aux
+					aux2 = cm[i+1]
+					cm[i+1] = cm[i]
+					cm[i] = aux2
 
-		cm_median = []
-
-		for i in range(n_class):
-			cm_median.append([])
-
-
-		for i in range(it):
-			median = []
-			for j in range(len(cm)):
-				median.append(cm[j].item(i))
-			
-
-			cm_median[int(i/3)].append(int(statistics.median(median)))
+		acc_median = (acc[4]+ acc[5])/2
+		cm_median = cm[5]
 
 
-		array = np.asarray(cm_median)
-
-		return array
-
-
-		tab_aux = []
-		for i in range(len(tab_pred[md[0]][0])):
-			values = []
-			for m in md:
-				values.append(tab_pred[m][0][i])
-
-			tab_aux.append(values)
-
-		tab = dict()
-
-		for m in md:
-			tab[m] = []
-
-		for tb in tab_aux:
-			j = 0
-			for m in md:
-				tab[m].append(tb[j])
-				j += 1
-
-		return tab	
+		return acc_median,cm_median	
 
 	def roc(self,cm):
 
@@ -448,37 +409,6 @@ class SentClassifiers():
 		plt.title('Grafico ROC')
 		plt.legend(loc="lower right")
 		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/roc.png')
-		#plt.show()
-
-	def plot_confuse_matrix(self,cm,title,file_name):
-		labels = ['Negativo', 'Neutro','Positivo']
-		cm = np.ceil(cm)
-		fig = plt.figure()
-		ax = fig.add_subplot(111)
-		cax = ax.matshow(cm)
-		plt.title(title)
-		fig.colorbar(cax)
-		ax.set_xticklabels([''] + labels)
-		ax.set_yticklabels([''] + labels)
-
-		thresh = cm.max()/2
-		for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
-			plt.text(j, i, cm[i, j],horizontalalignment="center",color="white" if cm[i, j] > thresh else "black")
-
-		plt.tight_layout()
-		plt.xlabel('Predito')
-		plt.ylabel('Verdadeiro')
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/%s.png'%(file_name))
-		#plt.show()
-
-	def box_plot(self,results,names,title):
-
-		fig = plt.figure()
-		fig.suptitle(title)
-		ax = fig.add_subplot(111)
-		plt.boxplot(results)
-		ax.set_xticklabels(names)
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/boxplot-allan.png')
 		#plt.show()
 		
 
@@ -596,9 +526,6 @@ class SentClassifiers():
 
 
 		return ac,ac_v,p,r,f1,e,cm_median,roc_
-	
-	def write_dataframe(self):
-    		self.write_csv(self.df_pred,'experimentos-final/predicoes')
 
 	def pred_texts(self,dataset):
 
