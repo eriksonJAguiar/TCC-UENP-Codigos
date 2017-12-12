@@ -49,7 +49,7 @@ class SentClassifiers():
 
 	def read_csv(self,file):
 
-		df1 = pd.DataFrame.from_csv('/home/bsfaical/erikson/datasets-allan/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+		df1 = pd.DataFrame.from_csv('datasets-allan/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
 
 		df1 = df1.reset_index()
 
@@ -57,7 +57,7 @@ class SentClassifiers():
 
 	def write_csv(self,data,file):
 		df = pd.DataFrame(data)
-		df.to_csv('/home/bsfaical/erikson/Result/'+file+'.csv', mode='a', sep=';',index=False, header=False)
+		df.to_csv(file+'.csv', mode='a', sep=';',index=False, header=False)
 
 	def getSTrain():
 	
@@ -81,11 +81,16 @@ class SentClassifiers():
 
 	def clear(self,dataframe):
 		new_df = []
+		stem_pt = nltk.stem.SnowballStemmer('portuguese')
 		for df in dataframe:
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
 			#expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
 			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
+			filtrado_steam = []
+			for f in filtrado:
+				filtrado_steam.append(stem_pt.stem(f))
+			
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
@@ -372,17 +377,24 @@ class SentClassifiers():
 		plt.ylabel('Taxa de Verdadeiro Positivo')
 		plt.title('Grafico ROC')
 		plt.legend(loc="lower right")
-		plt.show()
+		plt.savefig('Figuras/roc.png')
+		#plt.show()
 
 	def plot_roc_all(self,fpr,tpr,roc_auc,label):
 		plt.figure()
 		lw = 2
-		plt.plot(fpr[0],tpr[0],color='red',lw=lw,label='UAC(%s = %0.2f)' % (label[0],roc_auc[0]))
-		plt.plot(fpr[1],tpr[1],color='blue',lw=lw,label='UAC(%s = %0.2f)' % (label[1],roc_auc[1]))
-		plt.plot(fpr[2],tpr[2],color='yellow',lw=lw,label='UAC(%s = %0.2f)' % (label[2],roc_auc[2]))
-		plt.plot(fpr[3],tpr[3],color='green',lw=lw,label='UAC(%s = %0.2f)' % (label[3],roc_auc[3]))
-		plt.plot(fpr[4],tpr[4],color='purple',lw=lw,label='UAC(%s = %0.2f)' % (label[4],roc_auc[4]))
-		plt.plot(fpr[5],tpr[5],color='orange',lw=lw,label='UAC(%s = %0.2f)' % (label[5],roc_auc[5]))
+		tam  = len(fpr)
+		color = ['red','blue','yellow','green','purple','orange']
+		
+		for i in range(tam):
+			plt.plot(fpr[i],tpr[i],color=color[i],lw=lw,label='UAC(%s = %0.2f)' % (label[i],roc_auc[i]))
+		
+		#plt.plot(fpr[1],tpr[1],color='blue',lw=lw,label='UAC(%s = %0.2f)' % (label[1],roc_auc[1]))
+		#plt.plot(fpr[2],tpr[2],color='yellow',lw=lw,label='UAC(%s = %0.2f)' % (label[2],roc_auc[2]))
+		#plt.plot(fpr[3],tpr[3],color='green',lw=lw,label='UAC(%s = %0.2f)' % (label[3],roc_auc[3]))
+		#plt.plot(fpr[4],tpr[4],color='purple',lw=lw,label='UAC(%s = %0.2f)' % (label[4],roc_auc[4]))
+		#plt.plot(fpr[5],tpr[5],color='orange',lw=lw,label='UAC(%s = %0.2f)' % (label[5],roc_auc[5]))
+		
 		plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
 		plt.xlim([0.0, 1.0])
 		plt.ylim([0.0, 1.0])
@@ -390,7 +402,7 @@ class SentClassifiers():
 		plt.ylabel('Taxa de Verdadeiro Positivo')
 		plt.title('Grafico ROC')
 		plt.legend(loc="lower right")
-		plt.savefig('/home/bsfaical/erikson/Figuras/roc.png')
+		plt.savefig('Figuras/roc.png')
 		#plt.show()
 
 	def plot_confuse_matrix(self,cm,title,file_name):
@@ -411,7 +423,7 @@ class SentClassifiers():
 		plt.tight_layout()
 		plt.xlabel('Predito')
 		plt.ylabel('Verdadeiro')
-		plt.savefig('/home/bsfaical/erikson/Figuras/%s.png'%(file_name))
+		plt.savefig('Figuras/%s.png'%(file_name))
 		#plt.show()
 
 	def box_plot(self,results,names,title,file):
@@ -421,7 +433,7 @@ class SentClassifiers():
 		ax = fig.add_subplot(111)
 		plt.boxplot(results)
 		ax.set_xticklabels(names)
-		plt.savefig('/home/bsfaical/erikson/Figuras/%s.png'%(file))
+		plt.savefig('Figuras/%s.png'%(file))
 		#plt.show()
 		
 
@@ -524,7 +536,23 @@ class SentClassifiers():
 
 
 		return ac,ac_v,p,r,f1,e,cm,roc_
-	
+
+	def gradienteDesc(self):
+
+		parameters = {'loss':['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron','squared_loss', 'huber', 'epsilon_insensitive','squared_epsilon_insensitive'],
+		'penalty':['l1','l2'],'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'learning_rate':['constant','optimal','invscaling'],'eta0':[0.01,0.1,1.0]}
+
+		grid_sgd = GridSearchCV(SGDClassifier(),parameters)
+
+
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_sgd,self.array_train,self.target_train)
+		roc_  = Roc()
+		roc_ = self.roc(cm)
+
+
+		return ac,ac_v,p,r,f1,e,cm,roc_
+
+
 	def committee(self,pesos):
 		model = VotingClassifier(estimators=[('nv', self.classifiers[0]), ('svm',self.classifiers[1]), ('dt',self.classifiers[2]) ,('rf', self.classifiers[3]), ('lr',self.classifiers[4])], weights=pesos,voting='hard')
 
@@ -548,35 +576,14 @@ class SentClassifiers():
 		X = count_vect.fit_transform(test)
 		train = count_vect.transform(self.array_train)
 
+		parameters = {'loss':['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron','squared_loss', 'huber', 'epsilon_insensitive','squared_epsilon_insensitive'],
+		'penalty':['l1','l2'],'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'learning_rate':['constant','optimal','invscaling'],'eta0':[0.01,0.1,1.0]}
 
-		parameters = []
+		sgd = GridSearchCV(SGDClassifier(),parameters)
 
-		parameters.append({'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'fit_prior':[True,False]})
-		parameters.append({'criterion':('gini','entropy'),'splitter':('best','random'),'max_features':('auto','log2','sqrt')})
-		parameters.append({'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr','mutinomial']})	
-		parameters.append({'n_estimators':[1,5,10,20,30],'criterion':('gini','entropy')})
-		parameters.append({'penalty':['l2'],'C':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'solver':['newton-cg','lbfgs','sag'],'multi_class':['ovr']})
+		sgd.fit(train,self.target_train)
 
-		grid_nb = GridSearchCV(MultinomialNB(),parameters[0])
-		grid_dt = GridSearchCV(tree.DecisionTreeClassifier(),parameters[1])
-		grid_svm = GridSearchCV(svm.SVC(),parameters[2])
-		grid_rf = GridSearchCV(RandomForestClassifier(),parameters[3])
-		grid_lr = GridSearchCV(LogisticRegression(),parameters[4])
-
-		pesos = []
-		
-		df_pesos = self.read_csv('pesos.csv')
-
-		ac = df_pesos['ac'].values
-
-		pesos = self.calc_weigth(ac)
-
-
-		comite = VotingClassifier(estimators=[('nv', grid_nb), ('svm',grid_svm), ('dt',grid_dt) ,('rf', grid_rf), ('lr',grid_lr)], weights=pesos,voting='hard')
-
-		comite.fit(train,self.target_train)
-
-		pred = comite.predict(X)
+		pred = sgd.predict(X)
 
 		df = pd.DataFrame()
 

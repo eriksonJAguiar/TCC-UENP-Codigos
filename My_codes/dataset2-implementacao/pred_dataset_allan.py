@@ -10,27 +10,32 @@ import random
 
 def read_file(file):
 
-	df1 = pd.DataFrame.from_csv('/home/bsfaical/erikson/datasets-allan/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+	df1 = pd.DataFrame.from_csv('datasets-allan/Result/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
 
 	df1 = df1.reset_index()
 
 	return df1
 
-def predict():
+def write_csv(self,data,file):
+		df = pd.DataFrame(data)
+		df.to_csv(file+'.csv', mode='a', sep=';',index=False, header=False)
 
+def predict(sent):
+	
+	files = []
 	for _, _, f in os.walk('datasets-allan'):
 		files.append(f)
 
 
 	for f in files[0]:
-		df = read_file(f)
+		df = sent.read_csv(f)
 		print('Realizando a predição para %s'%(f))
 		print('Aguarde...')
 		df_pred = sent.pred_texts(df['tweet'].values)
 
 		df['sentiment'] = df_pred['sentiment']
 
-		sent.write_csv(df,'/home/bsfaical/erikson/Result/%s'%(f))
+		sent.write_csv(df,'datasets-allan/Result/%s'%(f))
 
 		print('Finalizado para o dataset %s'%(f))
 
@@ -39,7 +44,7 @@ def config_dataset():
 
 	files = []
 
-	for _, _, f in os.walk('/home/bsfaical/erikson/datasets-allan'):
+	for _, _, f in os.walk('datasets-allan/Result'):
 		files.append(f)
 
 	twitter = pd.DataFrame(columns=['user','tweet','coordenada','horario','sentiment'])
@@ -54,31 +59,24 @@ def config_dataset():
 	twt = []
 	snt = []
 
-	#new_twitter = pd.DataFrame(columns=['tweet','sentiment'])
+	new_twitter = pd.DataFrame(columns=['tweet','sentiment'])
 
-	#for i in range(1,10):
-	#	for i in range(1,20):
-	#		r = random.randint(0,lines-1)
-	#		t = twitter['tweet'].values
-	#		s = twitter['sentiment'].values
-	#		twt.append(t[r])
-	#		snt.append(int(s[r]))
+	for i in range(1,10):
+		for i in range(1,20):
+			r = random.randint(0,lines-1)
+			t = twitter['tweet'].values
+			s = twitter['sentiment'].values
+			twt.append(t[r])
+			snt.append(int(s[r]))
 
-	#new_twitter['tweet'] = twt
-	#new_twitter['sentiment'] = snt
+	new_twitter['tweet'] = twt
+	new_twitter['sentiment'] = snt
 
-	#write_file(new_twitter,'dataset-parcial')
+	write_file(new_twitter,'datasets-allan/Result/dataset-parcial')
 
 	return twitter
 
-
-if __name__ == '__main__':
-
-	dataset = config_dataset()
-
-	sent = SentClassifiers(dataframe=dataset)
-
-	#sent = SentClassifiers('dataset-portuguese.csv')
+def mensure(sent):
 
 	results = []
 	acuracias = []
@@ -110,145 +108,60 @@ if __name__ == '__main__':
 	print('---------------')
 
 	sent.plot_confuse_matrix(nv_cm,'Matriz de Confusao - Naive Bayes','matriz-nv')
+
+
+	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
+	logs.append(l)
 	fpr.append(nv_roc.get_fpr())
 	tpr.append(nv_roc.get_tpr())
 	auc.append(nv_roc.get_auc())
 
-	l = 'nv',nv_acc,nv_p,nv_r,nv_f1,nv_e,str(dt.now())
-	logs.append(l)
-
 	start = time.time()
-	svm_acc,svm_ac,svm_p,svm_r,svm_f1,svm_e,svm_cm,svm_roc = sent.CSuportVectorMachine()
+	sgd_acc,sgd_ac,sgd_p,sgd_r,sgd_f1,sgd_e,sgd_cm,sgd_roc = sent.gradienteDesc()
 	end = time.time()
-	custos['svm'] = [end-start]
-	print('SVM')
-	print('ac = %f'%svm_acc)
-	print('p = %f'%svm_p)
-	print('r = %f'%svm_r)
-	print('f1 = %f'%svm_f1)
-	print('e = %f'%svm_e)
-	print('time = %f'%(end-start))
+	custos['sgd'] = [end-start]
+	print('Gradiente')
+	print('ac = %f'%sgd_acc)
+	print('p = %f'%sgd_p)
+	print('r = %f'%sgd_r)
+	print('f1 = %f'%sgd_f1)
+	print('e = %f'%sgd_e)
+	print("time %f"%(end-start))
 	print('---------------')
 
-	sent.plot_confuse_matrix(svm_cm,'Matriz de Confusao - SVM','matriz-svm')
-	fpr.append(svm_roc.get_fpr())
-	tpr.append(svm_roc.get_tpr())
-	auc.append(svm_roc.get_auc())
+	sent.plot_confuse_matrix(sgd_cm,'Matriz de Confusao - SGD','matriz-sgd')
 
-	l = 'svm',svm_acc,svm_p,svm_r,svm_f1,svm_e,str(dt.now())
-	logs.append(l)
-	
-	start = time.time()
-	dt_acc,dt_ac,dt_p,dt_r,dt_f1,dt_e,dt_cm,dt_roc = sent.CDecisionTree()
-	end = time.time()
-	custos['dt'] = [end-start]
-	print('Decisao')
-	print('ac = %f'%dt_acc)
-	print('p = %f'%dt_p)
-	print('r = %f'%dt_r)
-	print('f1 = %f'%dt_f1)
-	print('e = %f'%dt_e)
-	print('time = %f'%(end-start))
-	print('---------------')
 
-	sent.plot_confuse_matrix(dt_cm,'Matriz de Confusao - Arv. Decisao','matriz-dt')
-	fpr.append(dt_roc.get_fpr())
-	tpr.append(dt_roc.get_tpr())
-	auc.append(dt_roc.get_auc())
-
-	l = 'dt',dt_acc,dt_p,dt_r,dt_f1,dt_e,str(dt.now())
+	l = 'sgd',sgd_acc,sgd_p,sgd_r,sgd_f1,sgd_e,str(dt.now())
 	logs.append(l)
 
-	start = time.time()
-	rf_acc,rf_ac,rf_p,rf_r,rf_f1,rf_e,rf_cm,rf_roc = sent.CRandomForest()
-	end = time.time()
-	custos['rf'] = [end-start]
-	print('Forest')
-	print('ac = %f'%rf_acc)
-	print('p = %f'%rf_p)
-	print('r = %f'%rf_r)
-	print('f1 = %f'%rf_f1)
-	print('e = %f'%rf_e)
-	print('time = %f'%(end-start))
-	print('---------------')
+	fpr.append(sgd_roc.get_fpr())
+	tpr.append(sgd_roc.get_tpr())
+	auc.append(sgd_roc.get_auc())
 
-	sent.plot_confuse_matrix(rf_cm,'Matriz de Confusao - Rand. Forest','matriz-rf')
-	fpr.append(rf_roc.get_fpr())
-	tpr.append(rf_roc.get_tpr())
-	auc.append(rf_roc.get_auc())
-
-	l = 'rf',rf_acc,rf_p,rf_r,rf_f1,rf_e,str(dt.now())
-	logs.append(l)
-
-	start = time.time()
-	rl_acc,rl_ac,rl_p,rl_r,rl_f1,rl_e,rl_cm,rl_roc = sent.CLogistRegression()
-	end = time.time()
-	custos['rl'] = [end-start]
-
-	print('Logistic')
-	print('ac = %f'%rl_acc)
-	print('p = %f'%rl_p)
-	print('r = %f'%rl_r)
-	print('f1 = %f'%rl_f1)
-	print('e = %f'%rl_e)
-	print('time = %f'%(end-start))
-	print('---------------')
-
-	sent.plot_confuse_matrix(rl_cm,'Matriz de Confusao - Reg. Logistica','matriz-rl')
-	fpr.append(rl_roc.get_fpr())
-	tpr.append(rl_roc.get_tpr())
-	auc.append(rl_roc.get_auc())
-
-	l = 'rl',rl_acc,rl_p,rl_r,rl_f1,rl_e,str(dt.now())
-	logs.append(l)
-
+	results.append(sgd_ac)
 	results.append(nv_ac)
-	results.append(svm_ac)
-	results.append(dt_ac)
-	results.append(rf_ac)
-	results.append(rl_ac)
 
-	acuracias.append(nv_acc)
-	acuracias.append(svm_acc)
-	acuracias.append(dt_acc)
-	acuracias.append(rf_acc)
-	acuracias.append(rl_acc)
+	sent.write_csv(custos,'Result/tempo-exe')
 
-	start = time.time()
-	pesos = sent.calc_weigth(acuracias)
+	sent.write_csv(logs,'Result/metricas')
 
-
-	names = ['naive','svm','tree','forest','logistic','committee']
-
-	ac,cmm_ac,p,r,f1,e,cm_cm,cm_roc = sent.committee(pesos)
-	end = time.time()
-	custos['cm'] = [end-start]
+	label = ['sgd','naive']
 	
-	results.append(cmm_ac)
+	sent.plot_roc_all(fpr,tpr,auc,label)
 
-	print("Comitê")
-	print("Acuracia %f"%ac)
-	print("Precisao %f"%p)
-	print("Recall %f"%r)
-	print("F1 Score %f"%f1)
-	print("Erro %f"%e)
-	print('time = %f'%(end-start))
-	print("--------------------------")
+if __name__ == '__main__':
 
-	sent.write_csv(custos,'tempo-exe')
+	dataset = config_dataset()
 
-	sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz-cm')
-	fpr.append(cm_roc.get_fpr())
-	tpr.append(cm_roc.get_tpr())
-	auc.append(cm_roc.get_auc())
+	sent = SentClassifiers(dataframe=dataset)
 
-	l = 'cm',ac,p,r,f1,e,str(dt.now())
-	logs.append(l)
+	mensure(sent)
 
+	#sent = SentClassifiers('train/dataset-portuguese.csv')
 
-	sent.write_csv(logs,'metricas')
+	#predict(sent)
 
-	sent.plot_roc_all(fpr,tpr,auc,names)
-	sent.box_plot(results,names,'comparação entre os algoritmos','boxplot')
+	
 	
 	
