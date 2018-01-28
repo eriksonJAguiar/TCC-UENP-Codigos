@@ -10,7 +10,7 @@ import random
 
 def read_file(file):
 
-	df1 = pd.DataFrame.from_csv('datasets-allan/Result/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+	df1 = pd.DataFrame.from_csv('datasets/Result/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
 
 	df1 = df1.reset_index()
 
@@ -23,19 +23,19 @@ def write_csv(self,data,file):
 def predict(sent):
 	
 	files = []
-	for _, _, f in os.walk('datasets-allan'):
+	for _, _, f in os.walk('datasets'):
 		files.append(f)
 
 
 	for f in files[0]:
-		df = sent.read_csv(f)
+		df = sent.mread_csv(f)
 		print('Realizando a predição para %s'%(f))
 		print('Aguarde...')
 		df_pred = sent.pred_texts(df['tweet'].values)
 
 		df['sentiment'] = df_pred['sentiment']
 
-		sent.write_csv(df,'datasets-allan/Result/%s'%(f))
+		sent.write_csv(df,'datasets/Result/%s'%(f))
 
 		print('Finalizado para o dataset %s'%(f))
 
@@ -44,7 +44,7 @@ def config_dataset():
 
 	files = []
 
-	for _, _, f in os.walk('datasets-allan/Result'):
+	for _, _, f in os.walk('datasets/Result'):
 		files.append(f)
 
 	twitter = pd.DataFrame(columns=['user','tweet','coordenada','horario','sentiment'])
@@ -72,7 +72,7 @@ def config_dataset():
 	new_twitter['tweet'] = twt
 	new_twitter['sentiment'] = snt
 
-	write_file(new_twitter,'datasets-allan/Result/dataset-parcial')
+	write_file(new_twitter,'datasets/Result/dataset-parcial')
 
 	return twitter
 
@@ -152,15 +152,15 @@ def mensure(sent):
 
 if __name__ == '__main__':
 
-	dataset = config_dataset()
+	#dataset = config_dataset()
 
-	sent = SentClassifiers(dataframe=dataset)
+	#sent = SentClassifiers(dataframe=dataset)
 
-	mensure(sent)
+	#mensure(sent)
 
-	#sent = SentClassifiers('train/dataset-portuguese.csv')
+	sent = SentClassifiers('train/dataset-portuguese.csv')
 
-	#predict(sent)
+	predict(sent)
 
 	
 	

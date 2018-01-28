@@ -32,6 +32,7 @@ import itertools
 import numpy as np
 import pandas as pd
 import nltk
+#nltk.download('stopwords')
 import re
 import csv
 import json
@@ -47,9 +48,15 @@ from unicodedata import normalize
 class SentClassifiers():
 
 
-	def read_csv(self,file):
+	def mread_csv(self,file):
 
-		df1 = pd.DataFrame.from_csv('datasets-allan/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+		df1 = None
+		
+		try:
+			df1 = pd.read_csv('datasets/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1',engine='python')
+		except:
+			df1 = pd.read_csv('datasets/%s'%(file),sep='\t',index_col=0,encoding ='ISO-8859-1',engine='python')
+
 
 		df1 = df1.reset_index()
 
@@ -101,7 +108,7 @@ class SentClassifiers():
 
 
 	def initial(self,file):
-		dataframe = self.read_csv(file)
+		dataframe = self.mread_csv(file)
 
 		dataframe = dataframe.dropna()
 
@@ -144,9 +151,9 @@ class SentClassifiers():
 			print('parametro incorreto')
 
 	def find_tweet(self):
-		pos = self.read_csv('freq_pos3')['pt'].values
-		neu = self.read_csv('freq_neu3')['pt'].values
-		neg = self.read_csv('freq_neg3')['pt'].values
+		pos = self.mread_csv('freq_pos3')['pt'].values
+		neu = self.mread_csv('freq_neu3')['pt'].values
+		neg = self.mread_csv('freq_neg3')['pt'].values
 
 
 		df = pd.DataFrame()
