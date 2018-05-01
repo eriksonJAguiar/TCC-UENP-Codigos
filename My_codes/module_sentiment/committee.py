@@ -6,9 +6,11 @@ from datetime import datetime as dt
 import time
 import pandas as pd
 
+
+
 if __name__ == '__main__':
 
-	sent = SentClassifiers(file='dataset-portuguese.csv')
+	sent = SentClassifiers(file='dataset-english-senders.csv')
 
 	results = []
 	acuracias = []
@@ -133,11 +135,34 @@ if __name__ == '__main__':
 	l = 'rl',rl_acc,rl_p,rl_r,rl_f1,rl_e,str(dt.now())
 	logs.append(l)
 
+	start = time.time()
+	sgd_acc,sgd_ac,sgd_p,sgd_r,sgd_f1,sgd_e,sgd_cm,sgd_roc = sent.CGradienteDesc()
+	end = time.time()
+	custos['sgd'] = [end-start]
+
+	print('SGD')
+	print('ac = %f'%sgd_acc)
+	print('p = %f'%sgd_p)
+	print('r = %f'%sgd_r)
+	print('f1 = %f'%sgd_f1)
+	print('e = %f'%sgd_e)
+	print('time = %f'%(end-start))
+	print('---------------')
+
+	sent.plot_confuse_matrix(sgd_cm,'Matriz de Confusao - SGD','matriz-sgd')
+	fpr.append(sgd_roc.get_fpr())
+	tpr.append(sgd_roc.get_tpr())
+	auc.append(sgd_roc.get_auc())
+
+	sgd = 'sgd',sgd_acc,sgd_p,sgd_r,sgd_f1,sgd_e,str(dt.now())
+	logs.append(sgd)
+
 	results.append(nv_ac)
 	results.append(svm_ac)
 	results.append(dt_ac)
 	results.append(rf_ac)
 	results.append(rl_ac)
+	results.append(sgd_ac)
 
 	acuracias.append(nv_acc)
 	acuracias.append(svm_acc)
@@ -149,7 +174,7 @@ if __name__ == '__main__':
 	pesos = sent.calc_weigth(acuracias)
 
 
-	names = ['naive','svm','tree','forest','logistic','committee']
+	names = ['naive','svm','tree','forest','logistic','sgd','committee']
 
 	ac,cmm_ac,p,r,f1,e,cm_cm,cm_roc = sent.committee(pesos)
 	end = time.time()
@@ -166,7 +191,7 @@ if __name__ == '__main__':
 	print('time = %f'%(end-start))
 	print("--------------------------")
 
-	sent.write_csv(custos,'experimentos-final/custo-tempo')
+	sent.write_csv(custos,'Novos_Experimentos/custo-tempo')
 
 	sent.plot_confuse_matrix(cm_cm,'Matriz de Confusao - Comite','matriz2-cm')
 	fpr.append(cm_roc.get_fpr())
@@ -182,11 +207,11 @@ if __name__ == '__main__':
 
 	#sent.write_csv(lines,'committee')
 
-	sent.write_csv(logs,'experimentos-final/metricas')
+	sent.write_csv(logs,'Novos_Experimentos/metricas')
 	#sent.write_dataframe()
 
-	#sent.plot_roc_all(fpr,tpr,auc,names)
-	sent.box_plot(results,names,'comparacao entre os algoritmos','boxplot2')
+	sent.plot_roc_all(fpr,tpr,auc,names)
+	sent.box_plot(results,names,'comparacao entre os algoritmos','boxplot1')
 	
 	
 	

@@ -42,6 +42,7 @@ import math
 from datetime import datetime
 from class_roc import Roc
 from unicodedata import normalize
+from random import randint
 
 
 
@@ -50,7 +51,7 @@ class SentClassifiers():
 
 	def read_csv(self,file):
 
-		df1 = pd.DataFrame.from_csv('../files_external/%s'%(file),sep=';',index_col=0,encoding ='ISO-8859-1')
+		df1 = pd.DataFrame.from_csv('../files_external/%s'%(file),sep='\t',index_col=0,encoding ='ISO-8859-1')
 
 		df1 = df1.reset_index()
 
@@ -59,12 +60,6 @@ class SentClassifiers():
 	def write_csv(self,data,file):
 		df = pd.DataFrame(data)
 		df.to_csv('../files_external/'+file+'.csv', mode='a', sep=';',index=False, header=False)
-
-	def getSTrain():
-	
-		tweets = db['sentiment_train'].find({},{'_id':0, 'index':0})
-
-		return tweets
 
 	def convert_df(self,df):
 		new_df = []
@@ -86,7 +81,7 @@ class SentClassifiers():
 			expr = re.sub(r"http\S+", "", df)
 			expr = re.sub(r"[@#]\S+","",expr)
 			#expr = normalize('NFKD',expr).encode('ASCII','ignore').decode('ASCII')
-			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('portuguese')]
+			filtrado = [w for w in nltk.regexp_tokenize(expr.lower(),"[\S]+") if not w in nltk.corpus.stopwords.words('english')]
 			frase = ""
 			for f in filtrado:
 				frase += f + " "
@@ -111,9 +106,26 @@ class SentClassifiers():
 
 		return new_df
 
+	def percent_dataset(self, array_t,target_t,percent):
+		tamb = len(array_t)
+		tpd = tamb * percent
+		tpd =  int(tpd)
+		pd = tamb / tpd
+		pd = int(pd)
+		r = randint(0,pd-1)
+		vf = 0
+		if(r == 0):
+			vf = tpd
+		else:
+			vf = r * tpd
+		vi = ((vf - tpd) + 1)
+
+		return array_t[vi:vf], target_t[vi:vf]
+
+	
 	#construtor
-	def __init__(self,file=None,dataframe=None):
-		
+	def __init__(self,file=None,dataframe=None,percent=1):
+				
 		if dataframe is None:
 			self.train_df = self.initial(file)
 			
@@ -121,6 +133,9 @@ class SentClassifiers():
 
 			self.target_train = self.train_df['opiniao'].values
 
+			if(percent != 1):
+				self.array_train, self.target_train = self.percent_dataset(self.array_train, self.target_train,percent)
+			
 			self.classifiers = []
 
 			self.df_pred = pd.DataFrame()
@@ -245,7 +260,7 @@ class SentClassifiers():
 		plt.tight_layout()
 		plt.xlabel('Predito')
 		plt.ylabel('Verdadeiro')
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/%s.png'%(file_name))
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/Novos_Experimentos/%s.png'%(file_name))
 		#plt.show()
 
 	def box_plot(self,results,names,title,file):
@@ -255,7 +270,7 @@ class SentClassifiers():
 		ax = fig.add_subplot(111)
 		plt.boxplot(results)
 		ax.set_xticklabels(names)
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/%s.png'%(file))
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/Novos_Experimentos/%s.png'%(file))
 		#plt.show()
 
 	def cross_apply(self,model,train,target):
@@ -326,7 +341,8 @@ class SentClassifiers():
 
 	def roc(self,cm):
 
-		n_classes = 3
+		n_classes = len(cm[1])
+
 		#roc_auc = []
 		fpr = [0,1]
 		tpr = [0,1]
@@ -338,6 +354,9 @@ class SentClassifiers():
 
 			tp = 0
 			sm = 0
+
+			i = 0
+			j = 0
 			#sensibilidade
 			for i in range(n_classes):
 				tp = cm[i,i]
@@ -350,6 +369,10 @@ class SentClassifiers():
 
 			tn = 0
 			smn = 0
+
+			i = 0
+			j = 0
+
 			#Especificidade
 			for i in range(n_classes):
 				tn = cm[i,i]
@@ -408,7 +431,7 @@ class SentClassifiers():
 		plt.ylabel('Taxa de Verdadeiro Positivo')
 		plt.title('Grafico ROC')
 		plt.legend(loc="lower right")
-		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/experimentos-final/roc.png')
+		plt.savefig('/media/erikson/BackupLinux/Documentos/UENP/4 º ano/TCC/TCC-UENP-Codigos/Figuras/Novos_Experimentos/roc.png')
 		#plt.show()
 		
 
@@ -456,7 +479,7 @@ class SentClassifiers():
 
 		#parameters = {'kernel':('linear', 'rbf'), 'C':[10, 100]}
 
-		parameters = {'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr','mutinomial']}
+		parameters = {'kernel': ['rbf','linear'], 'gamma': [1e-3, 1e-4],'C': [1, 10, 100, 1000],'decision_function_shape':['ovr']}
 		
 		grid_svm = GridSearchCV(svm.SVC(),parameters)
 
@@ -510,6 +533,20 @@ class SentClassifiers():
 		self.df_pred['lr'] = pred
 
 
+		return ac,ac_v,p,r,f1,e,cm,roc_
+
+	def CGradienteDesc(self):
+
+		parameters = {'loss':['hinge', 'log', 'modified_huber', 'squared_hinge', 'perceptron','squared_loss', 'huber', 'epsilon_insensitive','squared_epsilon_insensitive'],
+		'penalty':['l1','l2'],'alpha':[0.000001,0.00001,0.0001,0.001,0.1,1.0],'learning_rate':['constant','optimal','invscaling'],'eta0':[0.01,0.1,1.0]}
+
+		grid_sgd = GridSearchCV(SGDClassifier(),parameters)
+
+
+		pred,ac,ac_v,p,r,f1,e,cm = self.cross_apply(grid_sgd,self.array_train,self.target_train)
+		roc_  = Roc()
+		roc_ = self.roc(cm)
+		
 		return ac,ac_v,p,r,f1,e,cm,roc_
 	
 	def committee(self,pesos):
